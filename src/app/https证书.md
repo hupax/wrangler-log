@@ -1,16 +1,6 @@
----
-title: 'Caddy：懒人的 HTTPS 神器'
-date: '2024-12-28'
-description:
-  '厌倦了配置 Nginx 的繁琐步骤？试试 Caddy 吧！自动申请、续签 HTTPS
-  证书，简单到哭！'
-tags: ['Caddy', 'HTTPS', 'Web服务器', "Let's Encrypt"]
----
-
 # Caddy：懒人的 HTTPS 神器
 
-> 厌倦了配置 Nginx 的繁琐步骤？试试 Caddy 吧！自动申请、续签 HTTPS 证书，简单到
-> 哭！
+> 厌倦了配置 Nginx 的繁琐步骤？试试 Caddy 吧！自动申请、续签 HTTPS 证书，简单到哭！
 
 ## 为什么选择 Caddy？
 
@@ -29,7 +19,6 @@ Caddy 是一个现代化的 Web 服务器，用 Go 语言编写，最大特点�
 ## 安装配置步骤
 
 让我们一步步安装并配置 Caddy：
-
 ### 1. 安装 Caddy
 
 ```bash

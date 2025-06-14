@@ -1,7 +1,10 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // 基本配置
+  experimental: {
+    optimizePackageImports: ['highlight.js'],
+  },
 }
 
 export default nextConfig

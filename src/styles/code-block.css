@@ -1,0 +1,138 @@
+/* 代码块自定义样式 */
+
+/* 自定义滚动条样式 - 参考 GitHub 和 VS Code */
+.code-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(61, 129, 92, 0.5) transparent;
+}
+
+.code-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.code-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.code-scroll::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.5);
+  border-radius: 4px;
+}
+
+.code-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.7);
+}
+
+/* 更好的字体堆栈 - 参考 GitHub 和 VS Code */
+.font-mono {
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas,
+    'Courier New', monospace;
+  font-variant-ligatures: common-ligatures;
+  font-feature-settings: 'liga' 1, 'calt' 1;
+}
+
+/* 代码块容器优化 */
+.code-container {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    rgba(17, 24, 39, 0.95) 0%,
+    rgba(31, 41, 55, 0.95) 100%
+  );
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(75, 85, 99, 0.2);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+
+/* 代码行高亮效果 */
+.code-line {
+  transition: background-color 0.2s ease;
+}
+
+.code-line:hover {
+  background-color: rgba(75, 85, 99, 0.1);
+}
+
+/* 行号样式优化 */
+.line-numbers {
+  user-select: none;
+  color: rgba(156, 163, 175, 0.7);
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  background: linear-gradient(
+    to right,
+    rgba(17, 24, 39, 0.8),
+    rgba(31, 41, 55, 0.8)
+  );
+  border-right: 1px solid rgba(75, 85, 99, 0.2);
+}
+
+/* 复制按钮样式优化 */
+.copy-button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(8px);
+  background: rgba(17, 24, 39, 0.8);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.copy-button:hover {
+  background: rgba(31, 41, 55, 0.9);
+  border-color: rgba(147, 51, 234, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(147, 51, 234, 0.15);
+}
+
+/* 代码内容区域 */
+.code-content {
+  background: transparent;
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+  color: #e5e7eb;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .code-container {
+    border-radius: 8px;
+    margin: 0 -1rem;
+  }
+
+  .code-scroll::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .font-mono {
+    font-size: 0.8rem;
+  }
+}
+
+/* 暗色主题优化 */
+@media (prefers-color-scheme: dark) {
+  .code-container {
+    background: linear-gradient(
+      135deg,
+      rgba(17, 24, 39, 0.98) 0%,
+      rgba(31, 41, 55, 0.98) 100%
+    );
+    border-color: rgba(75, 85, 99, 0.3);
+  }
+
+  .line-numbers {
+    color: rgba(156, 163, 175, 0.8);
+  }
+}
+
+/* 性能优化 */
+.code-container {
+  contain: layout style paint;
+  will-change: scroll-position;
+}
+
+.code-line {
+  contain: layout style;
+}
