@@ -1,31 +1,44 @@
-import fs from 'fs'
-import path from 'path'
+'use client'
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
+import { useNotesStore } from '@/lib/store'
 
-export default async function NotePage({ params } : { params: { id: string } }) {
-  // 读取markdown文件内容
-  const markdownPath = path.join(process.cwd(), 'src', 'lib', 'https证书.md')
-  const markdownContent = fs.readFileSync(markdownPath, 'utf8')
+interface Note {
+  id: string
+  title: string
+  content: string
+  createdAt: Date
+  updatedAt: Date
+  prompt?: string
+}
 
-  const markdownPath1 = path.join(process.cwd(), 'src', 'lib', '中文乱码.md')
-  const markdownContent1 = fs.readFileSync(markdownPath1, 'utf8')
+export default function NotePage() {
+  const params = useParams()
+  const noteId = params.id as string
+  const [note, setNote] = useState<Note | null>(null)
 
-    const getNoteById = (id: string) => {
-      const notes = {
-        '1': { content: markdownContent },
-        '2': { content: markdownContent1 },
-        '3': { content: '# Caddy配置\n...' },
+  useEffect(() => {
+    const fetchNote = async () => {
+      if (!noteId) return
+
+      try {
+        const response = await fetch(`/api/notes/${noteId}`)
+        const data = await response.json()
+        setNote(data.note)
+        // console.log(data.note, 'note')
+      } catch (error) {
+        console.error('Failed to fetch note:', error)
       }
-      return notes[id as keyof typeof notes]
     }
-
-    const note = getNoteById(params.id)
+    fetchNote()
+  }, [noteId])
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="max-w-5xl mx-auto">
         <article className="p-8 md:p-12">
-          <MarkdownRenderer content={note.content} />
+          <MarkdownRenderer content={note?.content || ''} />
         </article>
       </div>
     </div>

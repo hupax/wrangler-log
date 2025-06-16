@@ -1,6 +1,6 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from 'firebase/app'
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
+import { getFirestore } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 
 const firebaseConfig = {
@@ -35,15 +35,15 @@ const db = getFirestore(app)
 const storage = getStorage(app)
 
 // Connect to Firestore emulator in development
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-  try {
-    connectFirestoreEmulator(db, 'localhost', 8080)
-    // connectStorageEmulator(storage, 'localhost', 9199) // 添加这行
-  } catch (error) {
-    // Emulator already connected or other connection error
-    console.log('Firestore emulator connection:', error)
-  }
-}
+// if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+//   try {
+//     connectFirestoreEmulator(db, 'localhost', 8080)
+//     // connectStorageEmulator(storage, 'localhost', 9199) // 添加这行
+//   } catch (error) {
+//     // Emulator already connected or other connection error
+//     console.log('Firestore emulator connection:', error)
+//   }
+// }
 
 const uploadFile = async (
   file: File,

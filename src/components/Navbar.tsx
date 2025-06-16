@@ -11,6 +11,7 @@ import {
   NewNoteIcon,
 } from './icons'
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface NavbarProps {
   onToggleSidebar: () => void
@@ -23,40 +24,9 @@ export default function Header({
   isSidebarOpen,
   shouldAnimate = false,
 }: NavbarProps) {
-  // const [startDate, setStartDate] = useState<Date | null>(new Date())
-  // const formatDate = (date: Date) => {
-  //   const year = date.getFullYear()
-  //   const month = date.getMonth() + 1
-  //   const day = date.getDate()
-  //   const weekdays = [
-  //     '星期日',
-  //     '星期一',
-  //     '星期二',
-  //     '星期三',
-  //     '星期四',
-  //     '星期五',
-  //     '星期六',
-  //   ]
-  //   const weekday = weekdays[date.getDay()]
-  //   return `${year}年${month}月${day}日·${weekday}`
-  // }
-
-  // const goToPreviousDay = () => {
-  //   if (startDate) {
-  //     const newDate = new Date(startDate)
-  //     newDate.setDate(newDate.getDate() - 1)
-  //     setStartDate(newDate)
-  //   }
-  // }
-
-  // const goToNextDay = () => {
-  //   if (startDate) {
-  //     const newDate = new Date(startDate)
-  //     newDate.setDate(newDate.getDate() + 1)
-  //     setStartDate(newDate)
-  //   }
-  // }
   const [isScrolled, setIsScrolled] = useState(false)
+
+  const router = useRouter()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -110,6 +80,9 @@ export default function Header({
               ? 'all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)'
               : 'none',
             willChange: 'opacity, scale',
+          }}
+          onClick={() => {
+            router.push('/')
           }}
         >
           <NewNoteIcon width={18} height={18} className="text-black" />

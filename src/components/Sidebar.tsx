@@ -7,7 +7,9 @@ import {
   MoreOptionsIcon,
 } from './icons'
 import Link from 'next/link'
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useNotesStore } from '@/lib/store'
 
 interface SidebarProps {
   isOpen: boolean
@@ -16,13 +18,42 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
+  const router = useRouter()
+  const pathname = usePathname() || '/notes/1'
+
+  const handleLinkClick = (e: React.MouseEvent, noteHref: string) => {
+    // 如果点击的是当前页面，阻止刷新
+    if (pathname === noteHref) {
+      e.preventDefault()
+      return
+    }
+  }
+
+  const { notes, setNotes } = useNotesStore()
+
+  // 加载笔记列表
+  useEffect(() => {
+    const fetchNotes = async () => {
+      try {
+        const response = await fetch('/api/notes')
+        const data = await response.json()
+        if (data.notes) {
+          setNotes(data.notes)
+        }
+      } catch (error) {
+        console.error('Failed to fetch notes:', error)
+      }
+    }
+
+    fetchNotes()
+  }, [setNotes])
+
   const menuItems = [
     {
       icon: NewNoteIcon,
       label: 'New Note',
       action: () => {
-        console.log('New Note clicked')
-        onClose()
+        router.push('/')
       },
     },
     {
@@ -43,17 +74,6 @@ const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
       separator: true,
     },
   ]
-
-  const pathname = usePathname() || '/notes/1'
-
-  const handleLinkClick = (e: React.MouseEvent, noteHref: string) => {
-    // 如果点击的是当前页面，阻止刷新
-    if (pathname === noteHref) {
-      e.preventDefault()
-      return
-    }
-
-  }
 
   const noteItems = [
     {
@@ -122,14 +142,14 @@ const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
             </h3>
 
             <div className="space-y-px">
-              {noteItems.map(note => (
+              {notes.map(note => (
                 <Link
                   key={note.id}
-                  href={note.href}
+                  href={`/notes/${note.id}`}
                   prefetch={true}
-                  onClick={(e) => handleLinkClick(e, note.href)}
+                  onClick={e => handleLinkClick(e, `/notes/${note.id}`)}
                   className={`group flex items-center justify-between px-3 py-1.5 rounded-xl cursor-pointer transition-colors duration-200 ${
-                    pathname === note.href ? 'bg-gray-200' : 'hover:bg-gray-100'
+                    pathname === `/notes/${note.id}` ? 'bg-gray-200' : 'hover:bg-gray-100'
                   }`}
                   draggable="true"
                 >
@@ -137,7 +157,7 @@ const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
                     <div className="truncate">
                       <span
                         className={`text-sm ${
-                          pathname === note.href
+                          pathname === `/notes/${note.id}`
                             ? 'text-gray-800'
                             : 'text-gray-700'
                         }`}

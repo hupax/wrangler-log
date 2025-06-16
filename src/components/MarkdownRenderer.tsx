@@ -134,7 +134,7 @@ const MarkdownRenderer = memo(
           '<em class="italic text-purple-600 dark:text-purple-400">$1</em>'
         )
         .replace(
-          /`(.*?)`/g,
+          /`([^`]*)`/g,
           '<code class="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-md text-sm font-mono shadow-sm">$1</code>'
         )
         .replace(
@@ -601,10 +601,12 @@ const MarkdownRenderer = memo(
               )
 
             case 'code':
-              const languageKey =
-                section.language?.toLowerCase() === 'dockerfile'
-                  ? 'docker'
-                  : section.language?.toLowerCase() || 'text'
+              const languageKey = (() => {
+                const lang = section.language?.toLowerCase() || 'text'
+                if (lang === 'dockerfile') return 'docker'
+                if (lang === 'cpp' || lang === 'c++') return 'java'
+                return lang
+              })()
               const originalContent = section.content.replace(/\n$/, '')
               const codeLines = originalContent.split('\n')
 
