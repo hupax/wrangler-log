@@ -15,11 +15,13 @@ import { useState, useEffect } from 'react'
 interface NavbarProps {
   onToggleSidebar: () => void
   isSidebarOpen: boolean
+  shouldAnimate?: boolean
 }
 
 export default function Header({
   onToggleSidebar,
   isSidebarOpen,
+  shouldAnimate = false,
 }: NavbarProps) {
   // const [startDate, setStartDate] = useState<Date | null>(new Date())
   // const formatDate = (date: Date) => {
@@ -81,13 +83,16 @@ export default function Header({
       <div className="flex items-center pl-2">
         <button
           onClick={onToggleSidebar}
-          className={`w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent transition-all duration-400 ${
+          className={`w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent ${
             isSidebarOpen
               ? 'opacity-0 pointer-events-none scale-50'
               : 'opacity-100 scale-100'
           }`}
           style={{
             transform: isSidebarOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+            transition: shouldAnimate
+              ? 'all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)'
+              : 'none',
             willChange: 'transform, opacity, scale',
           }}
         >
@@ -95,11 +100,17 @@ export default function Header({
         </button>
 
         <button
-          className={`w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent transition-all duration-400 ml-8 ${
+          className={`w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent ml-8 ${
             isSidebarOpen
               ? 'opacity-0 pointer-events-none scale-50'
               : 'opacity-100 scale-100'
           }`}
+          style={{
+            transition: shouldAnimate
+              ? 'all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)'
+              : 'none',
+            willChange: 'opacity, scale',
+          }}
         >
           <NewNoteIcon width={18} height={18} className="text-black" />
         </button>

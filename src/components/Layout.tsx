@@ -24,6 +24,46 @@ export default function Layout({ children }: LayoutProps) {
     localStorage.setItem('sidebarOpen', JSON.stringify(isSidebarOpen))
   }, [isSidebarOpen])
 
+  // 接管滚动恢复
+  useEffect(() => {
+    // 阻止浏览器自动滚动恢复
+    if ('scrollRestoration' in history) {
+      history.scrollRestoration = 'manual'
+    }
+
+    // 保存滚动位置
+    const saveScrollPosition = () => {
+      sessionStorage.setItem('scrollPosition', window.scrollY.toString())
+    }
+
+    // 恢复滚动位置（平滑）
+    const restoreScrollPosition = () => {
+      const savedPosition = sessionStorage.getItem('scrollPosition')
+      if (savedPosition) {
+        const targetY = parseInt(savedPosition, 10)
+        if (targetY > 0) {
+          // 延迟一点让DOM稳定
+          setTimeout(() => {
+            window.scrollTo({
+              top: targetY,
+              behavior: 'smooth',
+            })
+          }, 50)
+        }
+      }
+    }
+
+    // 页面卸载时保存位置
+    window.addEventListener('beforeunload', saveScrollPosition)
+
+    // 页面加载后恢复位置
+    restoreScrollPosition()
+
+    return () => {
+      window.removeEventListener('beforeunload', saveScrollPosition)
+    }
+  }, [])
+
   const toggleSidebar = () => {
     setShouldAnimate(true) // 启用动画
     setIsSidebarOpen(!isSidebarOpen)
@@ -51,14 +91,18 @@ export default function Layout({ children }: LayoutProps) {
       <div
         className="min-h-screen flex flex-col"
         style={{
-          marginLeft: isSidebarOpen ? '320px' : '0px',
+          marginLeft: isSidebarOpen ? '260px' : '0px',
           transition: shouldAnimate
             ? 'margin-left 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)'
             : 'none',
           willChange: 'margin-left',
         }}
       >
-        <Navbar onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
+        <Navbar
+          onToggleSidebar={toggleSidebar}
+          isSidebarOpen={isSidebarOpen}
+          shouldAnimate={shouldAnimate}
+        />
         <main className="flex-1">{children}</main>
       </div>
 

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'AI 笔记助手 - 智能整理你的数据',
+  title: 'Wrangler-log',
   description:
     '将任何数据交给AI，智能整理为结构化的Markdown笔记。让知识管理变得简单高效，告别繁琐的手动整理工作。',
 }
