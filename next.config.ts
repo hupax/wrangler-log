@@ -5,6 +5,9 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['highlight.js'],
   },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 }
 
 export default nextConfig

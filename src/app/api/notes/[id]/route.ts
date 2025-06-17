@@ -8,6 +8,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+
     const { id } = await params
     const docRef = doc(db, 'notes', id)
     const docSnap = await getDoc(docRef)

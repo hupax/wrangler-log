@@ -94,7 +94,7 @@ export default function Home() {
             <div className="input-container">
               <div className="input-content">
                 {!hasInteracted ||
-                  (!content && <div className="placeholder">Ask anything</div>)}
+                  (!content && <div className="placeholder">Note anything</div>)}
                 <div
                   ref={contentEditableRef}
                   contentEditable
