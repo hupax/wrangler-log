@@ -5,9 +5,8 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['highlight.js'],
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // 启用standalone输出，用于Docker部署
+  // output: 'standalone',
 }
 
 export default nextConfig

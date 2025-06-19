@@ -1,14 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/firebase'
-import { doc, getDoc, updateDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp,
+} from 'firebase/firestore'
 
 // GET - 获取单个笔记
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-
     const { id } = await params
     const docRef = doc(db, 'notes', id)
     const docSnap = await getDoc(docRef)
@@ -19,6 +24,7 @@ export async function GET(
 
     const note = {
       id: docSnap.id,
+
       ...docSnap.data(),
       createdAt: docSnap.data()?.createdAt?.toDate(),
       updatedAt: docSnap.data()?.updatedAt?.toDate(),
