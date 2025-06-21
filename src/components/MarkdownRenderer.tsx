@@ -57,7 +57,7 @@ interface Section {
   dividerType?: 'dash' | 'star' | 'equal' | 'underscore'
 }
 
-// 复制到剪贴板的组件 - 优化版
+// 复制到剪贴板的组件 - OpenAI 风格
 const CopyButton = memo(({ text }: { text: string }) => {
   const [copied, setCopied] = useState(false)
 
@@ -74,12 +74,12 @@ const CopyButton = memo(({ text }: { text: string }) => {
   return (
     <button
       onClick={copyToClipboard}
-      className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700/50 transition-all duration-200 group/btn"
+      className="p-2 rounded-md text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-200"
       title="复制代码"
     >
       {copied ? (
         <svg
-          className="w-4 h-4 text-green-400"
+          className="w-4 h-4 text-green-600 dark:text-green-400"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -122,24 +122,28 @@ const MarkdownRenderer = memo(
       setIsClient(true)
     }, [])
 
-    // 缓存文本格式处理函数
+    // 缓存文本格式处理函数 - OpenAI 风格
     const processInlineFormats = useCallback((text: string): string => {
       return text
         .replace(
           /\*\*(.*?)\*\*/g,
-          '<strong class="font-bold text-purple-700 dark:text-purple-300">$1</strong>'
+          '<strong class="font-semibold text-gray-700 dark:text-gray-300">$1</strong>'
         )
         .replace(
           /\*(.*?)\*/g,
-          '<em class="italic text-purple-600 dark:text-purple-400">$1</em>'
+          '<em class="italic text-gray-600 dark:text-gray-400">$1</em>'
         )
         .replace(
           /`([^`]*)`/g,
-          '<code class="bg-gradient-to-r from-purple-100 to-blue-100 dark:from-purple-900/30 dark:to-blue-900/30 text-purple-700 dark:text-purple-300 px-2 py-1 rounded-md text-sm font-mono shadow-sm">$1</code>'
+          '<code class="px-2 py-1 rounded-md text-sm font-mono text-gray-700 dark:text-gray-300" style="background-color: rgb(236, 236, 236);">$1</code>'
+        )
+        .replace(
+          /\$([^$]+)\$/g,
+          '<span class="px-2 py-1 rounded-md text-sm font-mono text-gray-700 dark:text-gray-300" style="background-color: rgb(236, 236, 236);">$1</span>'
         )
         .replace(
           /\[([^\]]+)\]\(([^)]+)\)/g,
-          '<a href="$2" class="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 underline decoration-purple-300 hover:decoration-purple-500 transition-all duration-200 font-medium" target="_blank" rel="noopener noreferrer">$1</a>'
+          '<a href="$2" class="text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 underline underline-offset-2 transition-colors duration-200" target="_blank" rel="noopener noreferrer">$1</a>'
         )
     }, [])
 
@@ -401,14 +405,13 @@ const MarkdownRenderer = memo(
       [content, parseMarkdown]
     )
 
-    // 缓存列表渲染函数
+    // 缓存列表渲染函数 - OpenAI 风格
     const renderListItems = useCallback(
       (items: ListItem[], level: number = 0): React.JSX.Element[] => {
         return items.map((item, index) => {
           const processedContent = processInlineFormats(item.content)
           const hasChildren = item.children && item.children.length > 0
           const isOrdered = item.type === 'ordered'
-          const isLastItem = index === items.length - 1
 
           return (
             <li
@@ -418,19 +421,7 @@ const MarkdownRenderer = memo(
               }`}
             >
               {!isOrdered && (
-                <>
-                  {level > 0 && (
-                    <div
-                      className={`absolute -left-4 top-0 w-px bg-gradient-to-b from-purple-300/50 to-blue-300/50 ${
-                        isLastItem && !hasChildren ? 'h-6' : 'bottom-0'
-                      }`}
-                    ></div>
-                  )}
-                  {level > 0 && (
-                    <div className="absolute -left-4 top-2 w-4 h-px bg-gradient-to-r from-purple-300/50 to-blue-300/50"></div>
-                  )}
-                  <span className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full block mt-2 flex-shrink-0 relative z-10 shadow-sm"></span>
-                </>
+                <span className="w-1.5 h-1.5 bg-gray-400 dark:bg-gray-500 rounded-full block mt-2.5 flex-shrink-0"></span>
               )}
               <div
                 className={`${isOrdered ? '' : 'flex-1'} ${
@@ -438,57 +429,45 @@ const MarkdownRenderer = memo(
                 }`}
               >
                 <span
-                  className="text-gray-700 dark:text-gray-300 leading-relaxed"
+                  className="text-gray-700 dark:text-gray-300 leading-loose"
                   dangerouslySetInnerHTML={{
                     __html: processedContent,
                   }}
                 />
                 {hasChildren && (
                   <div
-                    className={`mt-3 ${isOrdered ? 'ml-6' : 'ml-4'} relative`}
+                    className={`mt-2 ${isOrdered ? 'ml-6' : 'ml-4'} relative`}
                   >
                     {item.children![0].type === 'ordered' ? (
-                      <ol className="space-y-3 list-none counter-reset-ordered">
+                      <ol className="space-y-2 list-decimal list-inside">
                         {item.children!.map((child, childIndex) => (
                           <li
                             key={childIndex}
-                            className="relative flex items-start gap-3 counter-increment-ordered"
+                            className="text-gray-700 dark:text-gray-300 leading-loose"
                           >
-                            <span className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-sm font-bold rounded-full flex items-center justify-center shadow-sm">
-                              {childIndex + 1}
-                            </span>
-                            <div className="flex-1 pt-0.5">
-                              <span
-                                className="text-gray-700 dark:text-gray-300 leading-relaxed"
-                                dangerouslySetInnerHTML={{
-                                  __html: processInlineFormats(child.content),
-                                }}
-                              />
-                              {child.children && child.children.length > 0 && (
-                                <div className="mt-3 ml-4">
-                                  {child.children[0].type === 'ordered' ? (
-                                    <ol className="space-y-2 list-none">
-                                      {renderListItems(
-                                        child.children,
-                                        level + 2
-                                      )}
-                                    </ol>
-                                  ) : (
-                                    <ul className="space-y-2">
-                                      {renderListItems(
-                                        child.children,
-                                        level + 2
-                                      )}
-                                    </ul>
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                            <span
+                              dangerouslySetInnerHTML={{
+                                __html: processInlineFormats(child.content),
+                              }}
+                            />
+                            {child.children && child.children.length > 0 && (
+                              <div className="mt-2 ml-4">
+                                {child.children[0].type === 'ordered' ? (
+                                  <ol className="space-y-2 list-decimal list-inside">
+                                    {renderListItems(child.children, level + 2)}
+                                  </ol>
+                                ) : (
+                                  <ul className="space-y-2">
+                                    {renderListItems(child.children, level + 2)}
+                                  </ul>
+                                )}
+                              </div>
+                            )}
                           </li>
                         ))}
                       </ol>
                     ) : (
-                      <ul className="space-y-3">
+                      <ul className="space-y-2">
                         {renderListItems(item.children!, level + 1)}
                       </ul>
                     )}
@@ -519,9 +498,9 @@ const MarkdownRenderer = memo(
       return (
         <div className={`markdown-renderer ${className}`}>
           <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-3/4 mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-full mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded w-5/6 mb-4"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mb-4"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full mb-4"></div>
+            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-5/6 mb-4"></div>
           </div>
         </div>
       )
@@ -538,10 +517,12 @@ const MarkdownRenderer = memo(
             case 'title':
               return (
                 <div key={index} className="relative">
-                  <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 mb-6 pb-4 relative">
-                    {section.content}
-                    <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-purple-500/30 via-blue-500/50 to-purple-500/30 rounded-full"></div>
-                  </h1>
+                  <h1
+                    className="text-3xl font-bold text-gray-700 dark:text-gray-300 mb-8 pb-4 border-b border-gray-200 dark:border-gray-700 leading-tight"
+                    dangerouslySetInnerHTML={{
+                      __html: processInlineFormats(section.content),
+                    }}
+                  />
                 </div>
               )
 
@@ -558,44 +539,35 @@ const MarkdownRenderer = memo(
                   : 'h6'
               const headingSize =
                 section.level === 2
-                  ? 'text-3xl'
-                  : section.level === 3
                   ? 'text-2xl'
-                  : section.level === 4
+                  : section.level === 3
                   ? 'text-xl'
-                  : section.level === 5
+                  : section.level === 4
                   ? 'text-lg'
-                  : 'text-base'
+                  : section.level === 5
+                  ? 'text-base'
+                  : 'text-sm'
 
               return (
                 <HeadingTag
                   key={index}
-                  className={`${headingSize} font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-600 mt-12 mb-6 flex items-center gap-3`}
-                >
-                  <span className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full"></span>
-                  {section.content}
-                </HeadingTag>
+                  className={`${headingSize} font-semibold text-gray-700 dark:text-gray-300 mt-10 mb-6 leading-relaxed`}
+                  dangerouslySetInnerHTML={{
+                    __html: processInlineFormats(section.content),
+                  }}
+                />
               )
 
             case 'quote':
               return (
-                <div key={index} className="relative my-8">
-                  <blockquote className="relative backdrop-blur-md bg-white/10 dark:bg-gray-800/20 border border-white/20 dark:border-gray-700/30 rounded-xl p-6 shadow-lg">
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-
-                    <div className="flex items-start gap-4">
-                      <div className="text-purple-400/50 text-3xl font-serif leading-none">
-                        "
-                      </div>
-                      <div className="flex-1 italic text-purple-700 dark:text-purple-300 text-lg leading-relaxed">
-                        <MarkdownRenderer
-                          content={section.content}
-                          className="space-y-4"
-                        />
-                      </div>
+                <div key={index} className="relative my-6">
+                  <blockquote className="border-l-4 border-gray-300 dark:border-gray-600 pl-6 py-2 bg-gray-50 dark:bg-gray-800/50 rounded-r-lg">
+                    <div className="text-gray-600 dark:text-gray-400 italic leading-relaxed">
+                      <MarkdownRenderer
+                        content={section.content}
+                        className="space-y-4"
+                      />
                     </div>
-
-                    <div className="absolute -left-1 top-0 w-1 h-full bg-gradient-to-b from-purple-500/60 to-blue-500/60 rounded-full"></div>
                   </blockquote>
                 </div>
               )
@@ -611,52 +583,39 @@ const MarkdownRenderer = memo(
               const codeLines = originalContent.split('\n')
 
               return (
-                <div key={index} className="my-8 group">
-                  <div className="code-container">
-                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
+                <div key={index} className="my-6 group">
+                  <div className="openai-code-container">
+                    <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
                       <CopyButton text={originalContent} />
                     </div>
 
-                    <div className="code-scroll">
-                      <div className="flex min-w-max">
-                        <div className="line-numbers flex-shrink-0 py-4 px-4 min-w-[3.5rem]">
-                          {codeLines.map((_, index) => (
+                    <div className="overflow-x-auto">
+                      <div className="py-4 px-6">
+                        <pre className="openai-code-content text-sm leading-6 font-mono">
+                          {codeLines.map((line, index) => (
                             <div
                               key={index}
-                              className="h-6 leading-6 text-right whitespace-nowrap"
+                              className="code-line h-6 leading-6"
+                              style={{ whiteSpace: 'pre', tabSize: 4 }}
                             >
-                              {index + 1}
+                              <code
+                                className={`language-${languageKey}`}
+                                style={{ whiteSpace: 'pre', tabSize: 4 }}
+                                dangerouslySetInnerHTML={{
+                                  __html:
+                                    line.trim().length === 0
+                                      ? '\u00A0'
+                                      : Prism.highlight(
+                                          line,
+                                          Prism.languages[languageKey] ||
+                                            Prism.languages.text,
+                                          languageKey
+                                        ),
+                                }}
+                              />
                             </div>
                           ))}
-                        </div>
-
-                        <div className="flex-1 py-4 px-4 min-w-0">
-                          <pre className="code-content text-sm leading-6 whitespace-pre overflow-x-auto">
-                            {codeLines.map((line, index) => (
-                              <div
-                                key={index}
-                                className="code-line h-6 leading-6 font-mono"
-                                style={{ whiteSpace: 'pre', tabSize: 4 }}
-                              >
-                                <code
-                                  className={`language-${languageKey}`}
-                                  style={{ whiteSpace: 'pre', tabSize: 4 }}
-                                  dangerouslySetInnerHTML={{
-                                    __html:
-                                      line.trim().length === 0
-                                        ? '\u00A0'
-                                        : Prism.highlight(
-                                            line,
-                                            Prism.languages[languageKey] ||
-                                              Prism.languages.text,
-                                            languageKey
-                                          ),
-                                  }}
-                                />
-                              </div>
-                            ))}
-                          </pre>
-                        </div>
+                        </pre>
                       </div>
                     </div>
                   </div>
@@ -673,55 +632,44 @@ const MarkdownRenderer = memo(
               return (
                 <div key={index} className="my-6">
                   {rootListType === 'ordered' ? (
-                    <ol className="space-y-3 list-none">
+                    <ol className="space-y-3 list-decimal list-inside">
                       {section.listItems.map((item, itemIndex) => (
                         <li
                           key={itemIndex}
-                          className="relative flex items-start gap-3"
+                          className="text-gray-700 dark:text-gray-300 leading-loose"
                         >
-                          <span className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-sm font-bold rounded-full flex items-center justify-center shadow-sm">
-                            {itemIndex + 1}
-                          </span>
-                          <div className="flex-1 pt-0.5">
-                            <span
-                              className="text-gray-700 dark:text-gray-300 leading-relaxed"
-                              dangerouslySetInnerHTML={{
-                                __html: processInlineFormats(item.content),
-                              }}
-                            />
-                            {item.children && item.children.length > 0 && (
-                              <div className="mt-3 ml-4">
-                                {item.children[0].type === 'ordered' ? (
-                                  <ol className="space-y-3 list-none">
-                                    {item.children.map((child, childIndex) => (
-                                      <li
-                                        key={childIndex}
-                                        className="relative flex items-start gap-3"
-                                      >
-                                        <span className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-sm font-bold rounded-full flex items-center justify-center shadow-sm">
-                                          {childIndex + 1}
-                                        </span>
-                                        <div className="flex-1 pt-0.5">
-                                          <span
-                                            className="text-gray-700 dark:text-gray-300 leading-relaxed"
-                                            dangerouslySetInnerHTML={{
-                                              __html: processInlineFormats(
-                                                child.content
-                                              ),
-                                            }}
-                                          />
-                                        </div>
-                                      </li>
-                                    ))}
-                                  </ol>
-                                ) : (
-                                  <ul className="space-y-3">
-                                    {renderListItems(item.children, 1)}
-                                  </ul>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          <span
+                            className="text-gray-700 dark:text-gray-300 leading-loose"
+                            dangerouslySetInnerHTML={{
+                              __html: processInlineFormats(item.content),
+                            }}
+                          />
+                          {item.children && item.children.length > 0 && (
+                            <div className="mt-2 ml-4">
+                              {item.children[0].type === 'ordered' ? (
+                                <ol className="space-y-2 list-decimal list-inside">
+                                  {item.children.map((child, childIndex) => (
+                                    <li
+                                      key={childIndex}
+                                      className="text-gray-700 dark:text-gray-300 leading-loose"
+                                    >
+                                      <span
+                                        dangerouslySetInnerHTML={{
+                                          __html: processInlineFormats(
+                                            child.content
+                                          ),
+                                        }}
+                                      />
+                                    </li>
+                                  ))}
+                                </ol>
+                              ) : (
+                                <ul className="space-y-2">
+                                  {renderListItems(item.children, 1)}
+                                </ul>
+                              )}
+                            </div>
+                          )}
                         </li>
                       ))}
                     </ol>
@@ -749,129 +697,55 @@ const MarkdownRenderer = memo(
               )
 
               return (
-                <div key={index} className="my-8">
-                  <div className="relative backdrop-blur-md bg-white/10 dark:bg-gray-800/20 rounded-xl border border-white/20 dark:border-gray-700/30 shadow-lg overflow-hidden">
-                    <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"></div>
-
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full">
-                        {headers && (
-                          <thead>
-                            <tr className="bg-gradient-to-r from-purple-500/10 to-blue-500/10">
-                              {headers.map((header, headerIndex) => (
-                                <th
-                                  key={headerIndex}
-                                  className="px-6 py-4 text-left font-bold text-purple-700 dark:text-purple-300 border-b border-white/20 dark:border-gray-700/30"
-                                  dangerouslySetInnerHTML={{
-                                    __html: processInlineFormats(header),
-                                  }}
-                                />
-                              ))}
-                            </tr>
-                          </thead>
-                        )}
-                        <tbody>
-                          {rows.map((row, rowIndex) => (
-                            <tr
-                              key={rowIndex}
-                              className="border-b border-white/10 dark:border-gray-700/20 last:border-b-0"
-                            >
-                              {row.map((cell, cellIndex) => (
-                                <td
-                                  key={cellIndex}
-                                  className="px-6 py-4 text-gray-700 dark:text-gray-300"
-                                  dangerouslySetInnerHTML={{
-                                    __html: processInlineFormats(cell),
-                                  }}
-                                />
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                <div key={index} className="my-6">
+                  <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                      {headers && (
+                        <thead className="bg-gray-50 dark:bg-gray-800">
+                          <tr>
+                            {headers.map((header, headerIndex) => (
+                              <th
+                                key={headerIndex}
+                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                                dangerouslySetInnerHTML={{
+                                  __html: processInlineFormats(header),
+                                }}
+                              />
+                            ))}
+                          </tr>
+                        </thead>
+                      )}
+                      <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+                        {rows.map((row, rowIndex) => (
+                          <tr key={rowIndex}>
+                            {row.map((cell, cellIndex) => (
+                              <td
+                                key={cellIndex}
+                                className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300"
+                                dangerouslySetInnerHTML={{
+                                  __html: processInlineFormats(cell),
+                                }}
+                              />
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )
 
             case 'divider':
-              const dividerType = section.dividerType || 'dash'
-
-              switch (dividerType) {
-                case 'dash':
-                  return (
+              return (
+                <div key={index} className="my-8">
+                  <div className="w-full">
                     <div
-                      key={index}
-                      className="my-16 flex items-center justify-center"
-                    >
-                      <div className="flex items-center gap-4 w-full max-w-md">
-                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-purple-300 to-blue-300"></div>
-                        <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full shadow-lg"></div>
-                        <div className="flex-1 h-px bg-gradient-to-r from-blue-300 via-purple-300 to-transparent"></div>
-                      </div>
-                    </div>
-                  )
-
-                case 'star':
-                  return (
-                    <div
-                      key={index}
-                      className="my-16 flex items-center justify-center"
-                    >
-                      <div className="flex items-center gap-2 w-full max-w-md">
-                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent"></div>
-                        {[...Array(3)].map((_, i) => (
-                          <div
-                            key={i}
-                            className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rotate-45 shadow-sm"
-                          ></div>
-                        ))}
-                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-purple-400 to-transparent"></div>
-                      </div>
-                    </div>
-                  )
-
-                case 'equal':
-                  return (
-                    <div
-                      key={index}
-                      className="my-16 flex items-center justify-center"
-                    >
-                      <div className="w-full max-w-md space-y-2">
-                        <div className="h-0.5 bg-gradient-to-r from-transparent via-purple-400 via-blue-400 to-transparent"></div>
-                        <div className="h-0.5 bg-gradient-to-r from-transparent via-blue-400 via-purple-400 to-transparent"></div>
-                      </div>
-                    </div>
-                  )
-
-                case 'underscore':
-                  return (
-                    <div
-                      key={index}
-                      className="my-16 flex items-center justify-center"
-                    >
-                      <div className="w-full max-w-md">
-                        <div className="h-1 bg-gradient-to-r from-transparent via-purple-500 via-blue-500 to-transparent rounded-full shadow-sm"></div>
-                      </div>
-                    </div>
-                  )
-
-                default:
-                  return (
-                    <div
-                      key={index}
-                      className="my-16 flex items-center justify-center"
-                    >
-                      <div className="flex items-center gap-4 w-full max-w-md">
-                        <div className="flex-1 h-px bg-gradient-to-r from-transparent via-purple-300 to-blue-300"></div>
-                        <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full shadow-lg"></div>
-                        <div className="flex-1 h-px bg-gradient-to-r from-blue-300 via-purple-300 to-transparent"></div>
-                      </div>
-                    </div>
-                  )
-              }
+                      className="h-px dark:bg-gray-600"
+                      style={{ backgroundColor: 'rgb(243, 243, 243)' }}
+                    ></div>
+                  </div>
+                </div>
+              )
 
             case 'text':
               const processedText = processInlineFormats(section.content)
@@ -879,7 +753,7 @@ const MarkdownRenderer = memo(
               return (
                 <p
                   key={index}
-                  className="text-gray-700 dark:text-gray-300 leading-relaxed text-lg"
+                  className="text-gray-700 dark:text-gray-300 leading-loose text-base"
                   dangerouslySetInnerHTML={{ __html: processedText }}
                 />
               )

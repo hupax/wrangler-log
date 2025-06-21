@@ -66,17 +66,19 @@ export default function Home() {
     }
   }
 
-  // 简洁的加载页面
+  // OpenAI 风格加载页面
   if (isGenerating) {
     return (
-      <div className="fixed inset-0 bg-white flex items-center justify-center">
+      <div className="home-container">
         <div className="relative">
-          {/* 呼吸圆形动画 */}
-          <div className="w-16 h-16 bg-black rounded-full animate-pulse"></div>
-
-          {/* 外圈呼吸效果 */}
-          <div className="absolute inset-0 w-16 h-16 bg-black rounded-full opacity-20 animate-ping"></div>
+          <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-700 rounded-full"></div>
+          <div className="absolute inset-0 w-8 h-8 border-2 border-gray-600 dark:border-gray-400 border-t-transparent rounded-full animate-spin"></div>
         </div>
+
+        {/* 加载文字 */}
+        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+          Generating your note...
+        </p>
       </div>
     )
   }
@@ -94,7 +96,9 @@ export default function Home() {
             <div className="input-container">
               <div className="input-content">
                 {!hasInteracted ||
-                  (!content && <div className="placeholder">Note anything</div>)}
+                  (!content && (
+                    <div className="placeholder">Note anything</div>
+                  ))}
                 <div
                   ref={contentEditableRef}
                   contentEditable

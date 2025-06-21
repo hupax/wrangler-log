@@ -2,9 +2,62 @@ import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 export default function DemoPage() {
   const sampleMarkdown = `
-# MarkdownRenderer 全功能演示
+# ChatGPT风格 MarkdownRenderer 演示
 
-这是一个展示 **MarkdownRenderer** 组件所有功能的全面演示页面。让我们来测试各种 Markdown 格式的渲染效果！
+这是一个基于 **react-markdown** 的现代化 Markdown 渲染器，具有 ChatGPT 级别的渲染效果！
+
+## 🚀 核心特性
+
+- ✅ **语法高亮** - 基于 highlight.js
+- ✅ **数学公式** - 支持 KaTeX 渲染
+- ✅ **Mermaid 图表** - 流程图、时序图等
+- ✅ **代码复制** - 悬停显示复制按钮
+- ✅ **XSS 防护** - 内置安全过滤
+- ✅ **响应式设计** - 完美适配各种屏幕
+
+## 📊 Mermaid 图表演示
+
+### 流程图示例
+\`\`\`mermaid
+graph TD
+    A[开始] --> B{是否登录?}
+    B -->|是| C[显示主页]
+    B -->|否| D[跳转登录页]
+    D --> E[用户输入账号密码]
+    E --> F{验证是否通过?}
+    F -->|通过| C
+    F -->|失败| G[显示错误信息]
+    G --> E
+    C --> H[结束]
+\`\`\`
+
+### 时序图示例
+\`\`\`mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant Backend
+    participant Database
+
+    User->>Frontend: 发起登录请求
+    Frontend->>Backend: 发送用户凭证
+    Backend->>Database: 查询用户信息
+    Database-->>Backend: 返回用户数据
+    Backend-->>Frontend: 返回认证结果
+    Frontend-->>User: 显示登录状态
+\`\`\`
+
+## 🧮 数学公式支持
+
+行内公式：当 $a \\neq 0$ 时，方程 $ax^2 + bx + c = 0$ 的解为：
+
+块级公式：
+$$x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$$
+
+复杂公式示例：
+$$\\sum_{i=1}^{n} i = \\frac{n(n+1)}{2}$$
+
+## 💻 代码高亮演示
 
 ## 标题层级测试
 
