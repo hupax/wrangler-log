@@ -6,7 +6,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 const firebaseConfig = {
   // apiKey: 'AIzaSyC_MR9EknQ8CbCtMVENf4v_kwbfbPvzYlY',
   // authDomain: 'u-agent-fce30.firebaseapp.com',
-  // projectId: 'u-agent-fce30',
+  // projectId: 'nova-bean',
   // storageBucket: 'u-agent-fce30.firebasestorage.app',
   // messagingSenderId: '653820926347',
   // appId: '1:653820926347:web:eb73f9c0ea065ab3e2378e',
@@ -14,7 +14,7 @@ const firebaseConfig = {
   measurementId: process.env.NEXT_PUBLIC_MEASUREMENT_ID,
   apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_GOOGLE_CLOUD_PROJECT,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_STORAGE_BUCKET,
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
