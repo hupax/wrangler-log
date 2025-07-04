@@ -222,9 +222,10 @@ const MarkdownRenderer = memo(
 
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i]
+          const trimmedLine = line.trim()
 
-          // 代码块处理
-          if (line.startsWith('```')) {
+          // 代码块处理 - 修复：使用 trimmedLine 来识别代码块，支持有缩进的代码块
+          if (trimmedLine.startsWith('```')) {
             if (inCodeBlock) {
               sections.push({
                 type: 'code',
@@ -254,7 +255,7 @@ const MarkdownRenderer = memo(
                 inTable = false
               }
               inCodeBlock = true
-              codeLanguage = line.replace('```', '').trim() || 'text'
+              codeLanguage = trimmedLine.replace('```', '').trim() || 'text'
             }
             continue
           }
@@ -382,6 +383,14 @@ const MarkdownRenderer = memo(
         }
 
         // 处理最后的内容
+        if (inCodeBlock && currentCodeBlock.trim()) {
+          // 处理未完成的代码块
+          sections.push({
+            type: 'code',
+            content: currentCodeBlock.replace(/\n$/, ''),
+            language: codeLanguage,
+          })
+        }
         if (inList && currentList.length > 0) {
           sections.push({
             type: 'list',

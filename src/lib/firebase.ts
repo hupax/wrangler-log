@@ -2,17 +2,11 @@
 import { initializeApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 
 const firebaseConfig = {
-  // apiKey: 'AIzaSyC_MR9EknQ8CbCtMVENf4v_kwbfbPvzYlY',
-  // authDomain: 'u-agent-fce30.firebaseapp.com',
-  // projectId: 'nova-bean',
-  // storageBucket: 'u-agent-fce30.firebasestorage.app',
-  // messagingSenderId: '653820926347',
-  // appId: '1:653820926347:web:eb73f9c0ea065ab3e2378e',
-  // measurementId: 'G-4BJDS1GV92',
   measurementId: process.env.NEXT_PUBLIC_MEASUREMENT_ID,
-  apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY,
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   storageBucket: process.env.NEXT_PUBLIC_STORAGE_BUCKET,
@@ -64,4 +58,8 @@ const uploadFile = async (
   return { path: snapshot.ref.fullPath, downloadUrl, gcsUri }
 }
 
-export { app, firebaseConfig, db, storage, uploadFile }
+// auth
+const auth = getAuth(app)
+const googleProvider = new GoogleAuthProvider()
+
+export { app, firebaseConfig, db, storage, uploadFile, auth, googleProvider }

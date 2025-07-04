@@ -62,7 +62,13 @@ export async function generateNote(prompt: string) {
 
   const generativeModel = vertexAI.getGenerativeModel({ model: MODEL_NAME || '' })
 
-  const fullPrompt = `$你好，帮我将以下内容整理并补充为一篇笔记，你也可以提供一下深入见解。注意：你返回的回答内容必须全部都是md格式的内容，并且返回的是 输出 Markdown 原文，不要将所有回答放到Markdown代码块中，并且只能包含和这篇笔记有关的内容。内容：\n\n${prompt}`
+  const fullPrompt = `
+  你好，帮我将以下内容整理并补充为一篇笔记。
+  1. 你也可以补充相关知识或见解。
+  2. 你返回的回答内容必须全部都是md格式的内容，并且返回的是 输出 Markdown 原文，不要将所有回答放到Markdown代码块中，并且只能包含和这篇笔记有关的内容。
+  3. 你应该认真、仔细、全面阅读内容，包括内容中的链接等。
+  4. 笔记应该以第一人称视角风格呈现，但不要使用“我”、“我们”等字眼。
+  内容：\n\n${prompt}`
 
   const req = {
     contents: [{

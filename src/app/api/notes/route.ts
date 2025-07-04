@@ -39,14 +39,35 @@ export async function POST(request: NextRequest) {
   try {
     const {
       prompt,
+      userId,
       // noteType = 'general',
       // isGenerated = false,
     } = await request.json()
 
+    // 验证必需的参数
+    if (!prompt) {
+      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
+    }
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // console.log('Creating note for user:', userId, 'with prompt:', prompt)
+
     const content = process(await generateNote(prompt))
     const title = await generateNoteTitle(content)
 
-    const noteRef = await addDoc(collection(db, 'notes'), {
+    // console.log('Generated content and title:', {
+    //   title,
+    //   contentLength: content.length,
+    // })
+
+    // 使用嵌套集合结构：notes/{userId}/userNotes/{noteId}
+    const noteRef = await addDoc(collection(db, 'notes', userId, 'userNotes'), {
       title: title.trim(),
       content,
       createdAt: serverTimestamp(),
@@ -54,16 +75,21 @@ export async function POST(request: NextRequest) {
       prompt: prompt || null,
     })
 
+    // console.log('Note created successfully:', noteRef.id)
+
     return NextResponse.json({
       success: true,
       noteId: noteRef.id,
-      title,
+      title: title.trim(),
       content,
+      userId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     })
   } catch (error) {
     console.error('Failed to create note:', error)
     return NextResponse.json(
-      { error: 'Failed to create note' },
+      { error: 'Failed to create note', details: error },
       { status: 500 }
     )
   }

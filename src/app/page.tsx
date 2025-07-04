@@ -8,19 +8,22 @@ import {
 } from '@/components/icons'
 import { useRouter } from 'next/navigation'
 import { useNotesStore } from '@/lib/store'
+import LoginButton from '@/components/auth/LoginButton'
 
 export default function Home() {
   const [content, setContent] = useState('')
   const [hasInteracted, setHasInteracted] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [error, setError] = useState('')
   const contentEditableRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const { addNote } = useNotesStore()
+  const { addNote, user, isAuthenticated } = useNotesStore()
 
   const handleContentChange = () => {
     if (contentEditableRef.current) {
       const text = contentEditableRef.current.textContent || ''
       setContent(text)
+      setError('') // 清除错误信息
 
       // 自动调整高度
       contentEditableRef.current.style.height = 'auto'
@@ -36,21 +39,37 @@ export default function Home() {
   const handleGenerateNote = async () => {
     if (!content || isGenerating) return
 
+    // 检查用户是否已登录
+    if (!isAuthenticated || !user?.uid) {
+      setError('请先登录才能创建笔记')
+      return
+    }
+
     setIsGenerating(true)
+    setError('')
 
     try {
+      console.log('Creating note with userId:', user.uid)
+
       const response = await fetch('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prompt: content,
+          userId: user.uid,
         }),
       })
 
       const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP error! status: ${response.status}`)
+      }
+
       if (data.success) {
         addNote({
           id: data.noteId,
+          userId: data.userId,
           title: data.title,
           content: data.content,
           createdAt: data.createdAt,
@@ -58,9 +77,12 @@ export default function Home() {
           prompt: content,
         })
         router.push(`/notes/${data.noteId}`)
+      } else {
+        throw new Error(data.error || 'Failed to create note')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to generate note:', error)
+      setError(error.message || '创建笔记失败，请重试')
     } finally {
       setIsGenerating(false)
     }
@@ -83,10 +105,30 @@ export default function Home() {
     )
   }
 
+  // 如果用户未登录，显示登录提示
+  if (!isAuthenticated) {
+    return (
+      <div className="home-container">
+        <h1 className="home-title">Welcome to Wrangler-log</h1>
+        <p className="text-gray-600 dark:text-gray-400 mb-8">
+          请先登录以开始创建笔记
+        </p>
+        <LoginButton />
+      </div>
+    )
+  }
+
   return (
     <div className="home-container">
       {/* 标题 */}
       <h1 className="home-title">What's on your mind today?</h1>
+
+      {/* 错误信息 */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+          {error}
+        </div>
+      )}
 
       {/* 输入区域 */}
       <div className="composer-container">

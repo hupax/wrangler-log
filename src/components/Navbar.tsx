@@ -9,6 +9,9 @@ import {
 } from './icons'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useNotesStore } from '@/lib/store'
+import UserProfile from './auth/UserProfile'
+import LoginButton from './auth/LoginButton'
 
 interface NavbarProps {
   onToggleSidebar: () => void
@@ -24,6 +27,7 @@ export default function Header({
   const [isScrolled, setIsScrolled] = useState(false)
 
   const router = useRouter()
+  const { isAuthenticated } = useNotesStore()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -86,7 +90,11 @@ export default function Header({
         </button>
       </div>
 
-      <div className="flex items-center gap-4 pr-2">
+      {/* 中间空白区域 */}
+      <div className="flex-1"></div>
+
+      {/* 右侧按钮组 */}
+      <div className="flex items-center gap-2 pr-2">
         <button
           onClick={() => router.push('/subconverter')}
           className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent transition-all duration-200"
@@ -105,13 +113,11 @@ export default function Header({
         <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent transition-all duration-200">
           <NotebookIcon width={18} height={18} className="text-black" />
         </button>
-        {/* <div className="liquid-glass-action-button">
-          <ChartIcon
-            width={20}
-            height={20}
-            className="text-white/90 hover:text-white cursor-pointer transition-all duration-300"
-          />
-        </div> */}
+
+        {/* 认证部分 */}
+        <div className="auth-section ml-2">
+          {isAuthenticated ? <UserProfile /> : <LoginButton />}
+        </div>
       </div>
     </div>
   )
