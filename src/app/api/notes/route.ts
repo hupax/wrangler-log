@@ -12,9 +12,19 @@ import { generateNote, generateNoteTitle } from '@/lib/ai'
 import { process } from '@/lib/utils'
 
 // GET - 获取所有笔记
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const q = query(collection(db, 'notes'), orderBy('updatedAt', 'desc'))
+    const { searchParams } = new URL(request.url)
+    const userId = searchParams.get('userId')
+
+    if (!userId) {
+      return NextResponse.json({ error: 'UserId is required' }, { status: 400 })
+    }
+
+    const q = query(
+      collection(db, 'notes', userId, 'userNotes'),
+      orderBy('updatedAt', 'desc')
+    )
     const querySnapshot = await getDocs(q)
 
     const notes = querySnapshot.docs.map(doc => ({
@@ -23,6 +33,7 @@ export async function GET() {
       createdAt: doc.data().createdAt?.toDate(),
       updatedAt: doc.data().updatedAt?.toDate(),
     }))
+    console.log(notes, 'notes')
 
     return NextResponse.json({ notes })
   } catch (error) {
@@ -40,8 +51,6 @@ export async function POST(request: NextRequest) {
     const {
       prompt,
       userId,
-      // noteType = 'general',
-      // isGenerated = false,
     } = await request.json()
 
     // 验证必需的参数
@@ -69,10 +78,11 @@ export async function POST(request: NextRequest) {
     // 使用嵌套集合结构：notes/{userId}/userNotes/{noteId}
     const noteRef = await addDoc(collection(db, 'notes', userId, 'userNotes'), {
       title: title.trim(),
+      prompt: prompt,
       content,
+      userId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-      prompt: prompt || null,
     })
 
     // console.log('Note created successfully:', noteRef.id)

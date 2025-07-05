@@ -17,8 +17,9 @@ export default function Home() {
   const [error, setError] = useState('')
   const contentEditableRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const { addNote, user, isAuthenticated } = useNotesStore()
+  const { addNote, user, isAuthenticated, isLoading } = useNotesStore()
 
+  // 输入框内容变化
   const handleContentChange = () => {
     if (contentEditableRef.current) {
       const text = contentEditableRef.current.textContent || ''
@@ -36,14 +37,9 @@ export default function Home() {
     }
   }
 
+  // 创建笔记
   const handleGenerateNote = async () => {
-    if (!content || isGenerating) return
-
-    // 检查用户是否已登录
-    if (!isAuthenticated || !user?.uid) {
-      setError('请先登录才能创建笔记')
-      return
-    }
+    if (!content || isGenerating || !user) return
 
     setIsGenerating(true)
     setError('')
@@ -82,10 +78,24 @@ export default function Home() {
       }
     } catch (error: any) {
       console.error('Failed to generate note:', error)
-      setError(error.message || '创建笔记失败，请重试')
     } finally {
       setIsGenerating(false)
     }
+  }
+
+  // 如果还在加载认证状态，显示加载界面
+  if (isLoading) {
+    return (
+      <div className="home-container">
+        <div className="relative">
+          <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-700 rounded-full"></div>
+          <div className="absolute inset-0 w-8 h-8 border-2 border-gray-600 dark:border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+        <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">
+          Loading...
+        </p>
+      </div>
+    )
   }
 
   // OpenAI 风格加载页面

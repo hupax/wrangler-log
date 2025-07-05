@@ -4,14 +4,6 @@ const GOOGLE_CLOUD_PROJECT = process.env.NEXT_PUBLIC_GOOGLE_CLOUD_PROJECT
 const GOOGLE_CLOUD_LOCATION = process.env.NEXT_PUBLIC_GOOGLE_CLOUD_LOCATION
 const MODEL_NAME = process.env.NEXT_PUBLIC_MODEL_NAME
 
-// 笔记类型提示词模板
-const NOTE_TEMPLATES = {
-  general: '请生成一篇关于以下主题的详细笔记，使用Markdown格式：',
-  technical: '请生成一篇技术文档，包含代码示例和详细说明：',
-  tutorial: '请生成一篇教程，包含步骤说明和实践建议：',
-  summary: '请总结以下内容，提取关键要点：',
-  analysis: '请分析以下主题，提供深入见解：',
-}
 
 export async function generateContentFromFile(
   prompt: string,

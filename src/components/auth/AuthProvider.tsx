@@ -1,16 +1,19 @@
 'use client'
 
-import { useNotesStore } from "@/lib/store"
-import { auth } from "@/lib/firebase"
-import { onAuthStateChanged } from "firebase/auth"
-import { useEffect } from "react"
+import { useNotesStore } from '@/lib/store'
+import { auth } from '@/lib/firebase'
+import { onAuthStateChanged } from 'firebase/auth'
+import { useEffect } from 'react'
 
-
-export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { setUser } = useNotesStore()
-
+export default function AuthProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const { setUser, setLoading } = useNotesStore()
+// 监听 Firebase 认证状态变化
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
       if (user) {
         setUser({
           uid: user.uid,
@@ -21,10 +24,12 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       } else {
         setUser(null)
       }
+      // Firebase Auth 初始化完成
+      setLoading(false)
     })
 
     return () => unsubscribe()
-  }, [setUser])
+  }, [setUser, setLoading])
 
   return <>{children}</>
 }

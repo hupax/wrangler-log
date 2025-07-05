@@ -20,6 +20,7 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
   const router = useRouter()
   const pathname = usePathname() || '/notes/1'
+  const { user, isLoading } = useNotesStore()
 
   const handleLinkClick = (e: React.MouseEvent, noteHref: string) => {
     // 如果点击的是当前页面，阻止刷新
@@ -35,7 +36,17 @@ const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-        const response = await fetch('/api/notes')
+
+        // 如果还在加载中，不要发送请求
+        if (isLoading) return
+
+        // 如果用户未登录，清空笔记列表
+        if (!user) {
+          setNotes([])
+          return
+        }
+
+        const response = await fetch(`/api/notes?userId=${user.uid}`)
         const data = await response.json()
         if (data.notes) {
           setNotes(data.notes)
@@ -46,7 +57,7 @@ const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
     }
 
     fetchNotes()
-  }, [setNotes])
+  }, [setNotes, user, isLoading])
 
   const menuItems = [
     {
@@ -72,24 +83,6 @@ const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
         onClose()
       },
       separator: true,
-    },
-  ]
-
-  const noteItems = [
-    {
-      id: '1',
-      title: 'SSR Hydration 错误修复',
-      href: '/notes/1',
-    },
-    {
-      id: '2',
-      title: 'TSX语法介绍',
-      href: '/notes/2',
-    },
-    {
-      id: '3',
-      title: 'https-caddy',
-      href: '/notes/3',
     },
   ]
 
@@ -149,7 +142,9 @@ const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
                   prefetch={true}
                   onClick={e => handleLinkClick(e, `/notes/${note.id}`)}
                   className={`group flex items-center justify-between px-3 py-1.5 rounded-xl cursor-pointer transition-colors duration-200 ${
-                    pathname === `/notes/${note.id}` ? 'bg-gray-200' : 'hover:bg-gray-100'
+                    pathname === `/notes/${note.id}`
+                      ? 'bg-gray-200'
+                      : 'hover:bg-gray-100'
                   }`}
                   draggable="true"
                 >

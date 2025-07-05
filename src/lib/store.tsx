@@ -43,7 +43,7 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
   notes: [],
   user: null,
   currentNote: null,
-  isLoading: false,
+  isLoading: true,
   isAuthenticated: false,
 
   setUser: user => set({ user, isAuthenticated: !!user }),

@@ -8,7 +8,7 @@ import AuthProvider from '@/components/auth/AuthProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Wrangler-log',
+  title: 'Wrangler Log',
   description: 'Notes to just pedigree',
 }
 
