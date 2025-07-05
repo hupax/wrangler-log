@@ -5,6 +5,7 @@ import {
   ToolsIcon,
   MicIcon,
   VoiceModeIcon,
+  SendIcon,
 } from '@/components/icons'
 import { useRouter } from 'next/navigation'
 import { useNotesStore } from '@/lib/store'
@@ -12,7 +13,6 @@ import LoginButton from '@/components/auth/LoginButton'
 
 export default function Home() {
   const [content, setContent] = useState('')
-  const [hasInteracted, setHasInteracted] = useState(true)
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
   const [isComposing, setIsComposing] = useState(false) // 输入法组合状态
@@ -59,11 +59,6 @@ export default function Home() {
         textareaRef.current.style.height = scrollHeight + 'px'
         textareaRef.current.style.overflowY = 'hidden'
       }
-
-      const currentHeight = textareaRef.current.style.height
-      currentHeight === '24px'
-        ? setHasInteracted(true)
-        : setHasInteracted(false)
     }
   }
 
@@ -217,20 +212,11 @@ export default function Home() {
                     id="composer-submit-button"
                     aria-label="Send prompt"
                     data-testid="send-button"
-                    className="dark:disabled:bg-token-text-quaternary dark:disabled:text-token-main-surface-secondary flex items-center justify-center rounded-full transition-colors hover:opacity-70 disabled:text-[#f4f4f4] disabled:hover:opacity-100 dark:focus-visible:outline-white bg-black text-white disabled:bg-[#D7D7D7] dark:bg-white dark:text-black h-9 w-9"
+                    className="flex items-center justify-center rounded-full transition-colors hover:opacity-70 disabled:text-[#f4f4f4] disabled:hover:opacity-100 dark:focus-visible:outline-white bg-black text-white disabled:bg-[#D7D7D7] dark:bg-white dark:text-black h-9 w-9"
                     onClick={handleGenerateNote}
                     disabled={isGenerating || !content.trim()}
                   >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="icon"
-                    >
-                      <path d="M8.99992 16V6.41407L5.70696 9.70704C5.31643 10.0976 4.68342 10.0976 4.29289 9.70704C3.90237 9.31652 3.90237 8.6835 4.29289 8.29298L9.29289 3.29298L9.36907 3.22462C9.76184 2.90427 10.3408 2.92686 10.707 3.29298L15.707 8.29298L15.7753 8.36915C16.0957 8.76192 16.0731 9.34092 15.707 9.70704C15.3408 10.0732 14.7618 10.0958 14.3691 9.7754L14.2929 9.70704L10.9999 6.41407V16C10.9999 16.5523 10.5522 17 9.99992 17C9.44764 17 8.99992 16.5523 8.99992 16Z"></path>
-                    </svg>
+                    <SendIcon className="icon" />
                   </button>
                 ) : (
                   <button
