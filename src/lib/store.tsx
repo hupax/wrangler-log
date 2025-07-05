@@ -24,6 +24,8 @@ interface Note {
   githubSha?: string
   lastSyncedAt?: Date | string
   syncStatus?: 'synced' | 'pending' | 'conflict' | 'error' | 'not_synced'
+
+  
 }
 
 interface NotesStore {

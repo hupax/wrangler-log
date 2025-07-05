@@ -12,6 +12,7 @@ import {
   HelpIcon,
   RightArrowIcon,
   LogoutIcon,
+  GitHubIcon,
 } from '@/components/icons'
 
 export default function UserProfile() {
@@ -182,6 +183,25 @@ export default function UserProfile() {
                   </div>
                   <span className="text-sm text-gray-700 dark:text-gray-300">
                     登出
+                  </span>
+                </div>
+              </div>
+
+              <div className="px-1">
+                <div
+                  role="menuitem"
+                  className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors"
+                  onClick={() => {
+                    // 这里可以打开 GitHub 设置页面或模态框
+                    window.open('/github-settings', '_blank')
+                    setIsOpen(false)
+                  }}
+                >
+                  <div className="flex items-center justify-center w-5 h-5 text-gray-700 dark:text-gray-300">
+                    <GitHubIcon className="w-5 h-5" />
+                  </div>
+                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                    GitHub 集成
                   </span>
                 </div>
               </div>
