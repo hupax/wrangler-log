@@ -1,5 +1,6 @@
 // 创建全局状态管理
 import { create } from 'zustand'
+import { GitHubConfig } from './github'
 
 interface User {
   uid: string
@@ -17,6 +18,12 @@ interface Note {
   updatedAt: Date | string
   prompt?: string
   tags?: string[]
+
+  // GitHub 相关
+  githubPath?: string
+  githubSha?: string
+  lastSyncedAt?: Date | string
+  syncStatus?: 'synced' | 'pending' | 'conflict' | 'error' | 'not_synced'
 }
 
 interface NotesStore {
@@ -25,6 +32,9 @@ interface NotesStore {
   currentNote: Note | null
   isLoading: boolean
   isAuthenticated: boolean
+  // 新增 GitHub 相关状态
+  githubConfig: GitHubConfig | null
+  isGitHubConnected: boolean
 
   // Actions
   setUser: (user: User | null) => void
@@ -37,6 +47,10 @@ interface NotesStore {
   setLoading: (loading: boolean) => void
   fetchNotes: () => Promise<void>
   fetchNote: (noteId: string) => Promise<Note | null>
+
+  // GitHub Actions
+  setGithubConfig: (config: GitHubConfig | null) => void
+  setGithubConnected: (connected: boolean) => void
 }
 
 export const useNotesStore = create<NotesStore>((set, get) => ({
@@ -45,6 +59,10 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
   currentNote: null,
   isLoading: true,
   isAuthenticated: false,
+
+  // GitHub Status
+  githubConfig: null,
+  isGitHubConnected: false,
 
   setUser: user => set({ user, isAuthenticated: !!user }),
   signOut: () =>
@@ -66,6 +84,10 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
     })),
   setCurrentNote: note => set({ currentNote: note }),
   setLoading: loading => set({ isLoading: loading }),
+
+  // GitHub Actions
+  setGithubConfig: config => set({ githubConfig: config }),
+  setGithubConnected: connected => set({ isGitHubConnected: connected }),
 
   // 获取用户的所有笔记
   fetchNotes: async () => {

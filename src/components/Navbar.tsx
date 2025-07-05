@@ -94,7 +94,7 @@ export default function Header({
       <div className="flex-1"></div>
 
       {/* 右侧按钮组 */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <button
           onClick={() => router.push('/subconverter')}
           className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent transition-all duration-200 cursor-pointer"
