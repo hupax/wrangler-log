@@ -400,3 +400,19 @@ input:focus {
   color: #6b7280;
   opacity: 0.3;
 }
+
+/* 菜单动画 */
+@keyframes slideUpAndFade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slideUpAndFade {
+  animation: slideUpAndFade 0.2s ease-out;
+}

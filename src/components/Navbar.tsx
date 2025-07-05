@@ -54,7 +54,7 @@ export default function Header({
       <div className="flex items-center pl-2">
         <button
           onClick={onToggleSidebar}
-          className={`w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent ${
+          className={`w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent cursor-e-resize ${
             isSidebarOpen
               ? 'opacity-0 pointer-events-none scale-50'
               : 'opacity-100 scale-100'
@@ -71,7 +71,7 @@ export default function Header({
         </button>
 
         <button
-          className={`w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent ml-8 ${
+          className={`w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent ml-8 cursor-pointer ${
             isSidebarOpen
               ? 'opacity-0 pointer-events-none scale-50'
               : 'opacity-100 scale-100'
@@ -94,10 +94,10 @@ export default function Header({
       <div className="flex-1"></div>
 
       {/* 右侧按钮组 */}
-      <div className="flex items-center gap-2 pr-2">
+      <div className="flex items-center gap-2">
         <button
           onClick={() => router.push('/subconverter')}
-          className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent transition-all duration-200"
+          className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent transition-all duration-200 cursor-pointer"
           title="节点转换器"
         >
           <svg
@@ -110,12 +110,12 @@ export default function Header({
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
           </svg>
         </button>
-        <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent transition-all duration-200">
+        <button className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent transition-all duration-200 cursor-pointer">
           <NotebookIcon width={18} height={18} className="text-black" />
         </button>
 
         {/* 认证部分 */}
-        <div className="auth-section ml-2">
+        <div className="auth-section ml-2 ">
           {isAuthenticated ? <UserProfile /> : <LoginButton />}
         </div>
       </div>

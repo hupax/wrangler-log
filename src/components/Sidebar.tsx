@@ -7,9 +7,10 @@ import {
   MoreOptionsIcon,
 } from './icons'
 import Link from 'next/link'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useNotesStore } from '@/lib/store'
+import NoteOptionsMenu from './NoteOptionsMenu'
 
 interface SidebarProps {
   isOpen: boolean
@@ -21,6 +22,8 @@ const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
   const router = useRouter()
   const pathname = usePathname() || '/notes/1'
   const { user, isLoading } = useNotesStore()
+  const [activeMenuNoteId, setActiveMenuNoteId] = useState<string | null>(null)
+  const buttonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({})
 
   const handleLinkClick = (e: React.MouseEvent, noteHref: string) => {
     // 如果点击的是当前页面，阻止刷新
@@ -32,11 +35,20 @@ const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
 
   const { notes, setNotes } = useNotesStore()
 
+  const handleOptionsClick = (e: React.MouseEvent, noteId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setActiveMenuNoteId(activeMenuNoteId === noteId ? null : noteId)
+  }
+
+  const handleMenuClose = () => {
+    setActiveMenuNoteId(null)
+  }
+
   // 加载笔记列表
   useEffect(() => {
     const fetchNotes = async () => {
       try {
-
         // 如果还在加载中，不要发送请求
         if (isLoading) return
 
@@ -104,7 +116,7 @@ const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
         <div className="flex justify-end px-4 py-2">
           <button
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent transition-all duration-200"
+            className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent transition-all duration-200 cursor-w-resize"
             style={{
               transform: 'rotate(90deg)',
               willChange: 'transform',
@@ -121,7 +133,7 @@ const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
               <button
                 key={item.label}
                 onClick={item.action}
-                className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent text-gray-700 transition-all duration-200
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent text-gray-700 transition-all duration-200 cursor-pointer
                   ${item.separator ? 'mt-6' : ''}
                   `}
               >
@@ -166,12 +178,11 @@ const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
                   <div className="text-gray-500 flex items-center self-stretch">
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <button
-                        className="w-7 h-7 flex items-center justify-center transition-all duration-150"
-                        onClick={e => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          console.log('Options clicked for', note.title)
+                        ref={el => {
+                          if (el) buttonRefs.current[note.id] = el
                         }}
+                        className="w-7 h-7 flex items-center justify-center transition-all duration-150 cursor-pointer"
+                        onClick={e => handleOptionsClick(e, note.id)}
                         aria-label="Open note options"
                       >
                         <MoreOptionsIcon
@@ -188,6 +199,17 @@ const Sidebar = ({ isOpen, onClose, shouldAnimate = false }: SidebarProps) => {
           </div>
         </div>
       </div>
+
+      {/* 笔记选项菜单 */}
+      {activeMenuNoteId && (
+        <NoteOptionsMenu
+          noteId={activeMenuNoteId}
+          noteTitle={notes.find(n => n.id === activeMenuNoteId)?.title || ''}
+          isOpen={true}
+          onClose={handleMenuClose}
+          buttonRef={{ current: buttonRefs.current[activeMenuNoteId] || null }}
+        />
+      )}
     </div>
   )
 }
