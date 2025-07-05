@@ -256,6 +256,11 @@ input:focus {
 
 .editable-input {
   outline: none;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
   min-height: 20px;
   word-wrap: break-word;
   white-space: pre-wrap;
@@ -267,6 +272,11 @@ input:focus {
   max-height: 365px;
   overflow-y: auto;
   overflow-x: hidden;
+  padding: 0;
+  box-shadow: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
 }
 .editable-input::-webkit-scrollbar {
   width: 6px;
@@ -282,6 +292,17 @@ input:focus {
 }
 .editable-input::-webkit-scrollbar-track {
   background: transparent; /* 隐藏背景轨道 */
+}
+
+.editable-input::placeholder {
+  color: #8e8ea0;
+  opacity: 1;
+}
+
+.editable-input:focus {
+  outline: none;
+  border: none;
+  box-shadow: none;
 }
 
 .button-area {

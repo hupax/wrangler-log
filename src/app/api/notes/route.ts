@@ -33,7 +33,6 @@ export async function GET(request: NextRequest) {
       createdAt: doc.data().createdAt?.toDate(),
       updatedAt: doc.data().updatedAt?.toDate(),
     }))
-    console.log(notes, 'notes')
 
     return NextResponse.json({ notes })
   } catch (error) {

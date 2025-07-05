@@ -16,47 +16,60 @@ export default function Home() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
   const [isComposing, setIsComposing] = useState(false) // 输入法组合状态
-  const contentEditableRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const router = useRouter()
   const { addNote, user, isAuthenticated, isLoading } = useNotesStore()
 
-  // 输入框内容变化
-  const handleContentChange = () => {
-    if (contentEditableRef.current) {
-      // 获取纯文本内容，去除任何HTML标签
-      const text = contentEditableRef.current.textContent || ''
+  // 初始化时设置textarea高度
+  useEffect(() => {
+    if (textareaRef.current) {
+      const maxHeight = 365
+      textareaRef.current.style.height = 'auto'
+      const scrollHeight = textareaRef.current.scrollHeight
 
-      // 如果内容包含HTML标签，清理它们
-      if (contentEditableRef.current.innerHTML !== text) {
-        contentEditableRef.current.textContent = text
+      if (scrollHeight > maxHeight) {
+        textareaRef.current.style.height = maxHeight + 'px'
+        textareaRef.current.style.overflowY = 'auto'
+      } else {
+        textareaRef.current.style.height = scrollHeight + 'px'
+        textareaRef.current.style.overflowY = 'hidden'
+      }
+    }
+  }, [])
+
+  // 输入框内容变化
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const text = e.target.value
+    setContent(text)
+    setError('') // 清除错误信息
+
+    // 自动调整高度
+    if (textareaRef.current) {
+      const maxHeight = 365 // 最大高度，与CSS中的max-height保持一致
+
+      textareaRef.current.style.height = 'auto'
+      const scrollHeight = textareaRef.current.scrollHeight
+
+      if (scrollHeight > maxHeight) {
+        // 超过最大高度时，固定高度并显示滚动条
+        textareaRef.current.style.height = maxHeight + 'px'
+        textareaRef.current.style.overflowY = 'auto'
+      } else {
+        // 未超过最大高度时，自动调整高度并隐藏滚动条
+        textareaRef.current.style.height = scrollHeight + 'px'
+        textareaRef.current.style.overflowY = 'hidden'
       }
 
-      setContent(text)
-      setError('') // 清除错误信息
-
-      // 自动调整高度
-      contentEditableRef.current.style.height = 'auto'
-      contentEditableRef.current.style.height =
-        contentEditableRef.current.scrollHeight + 'px'
-
-      // 使用实时的 text 值而不是 state 中的 content
-      const isEmpty = !text.trim()
-      const currentHeight = contentEditableRef.current.style.height
-
+      const currentHeight = textareaRef.current.style.height
       currentHeight === '24px'
         ? setHasInteracted(true)
         : setHasInteracted(false)
-
-        console.log(!content.trim(), 'content');
-        console.log(hasInteracted, 'hasInteracted');
-        
-
     }
   }
 
   // 创建笔记
   const handleGenerateNote = async () => {
-    if (!content || isGenerating || !user) return
+    if (!content.trim() || isGenerating || !user) return
 
     setIsGenerating(true)
     setError('')
@@ -136,17 +149,20 @@ export default function Home() {
             {/* 输入框 */}
             <div className="input-container">
               <div className="input-content">
-                {!(content.trim()) && <div className="placeholder">Note anything</div>}
-                <div
-                  ref={contentEditableRef}
-                  contentEditable
-                  suppressContentEditableWarning
-                  className="editable-input"
-                  onInput={handleContentChange}
+                <textarea
+                  ref={textareaRef}
+                  value={content}
+                  onChange={handleContentChange}
                   onKeyDown={e => {
                     if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
-                      e.preventDefault()
-                      handleGenerateNote()
+                      // 检查内容是否为空或只包含空白字符
+                      if (content.trim()) {
+                        e.preventDefault()
+                        handleGenerateNote()
+                      } else {
+                        // 内容为空时阻止换行
+                        e.preventDefault()
+                      }
                     }
                   }}
                   onCompositionStart={() => {
@@ -155,59 +171,13 @@ export default function Home() {
                   onCompositionEnd={() => {
                     setIsComposing(false)
                   }}
-                  onPaste={e => {
-                    // 阻止默认粘贴行为
-                    e.preventDefault()
-
-                    // 获取纯文本内容
-                    const text = e.clipboardData?.getData('text/plain') || ''
-
-                    // 插入纯文本
-                    if (text && contentEditableRef.current) {
-                      // 获取当前光标位置
-                      const selection = window.getSelection()
-
-                      if (selection && selection.rangeCount > 0) {
-                        const range = selection.getRangeAt(0)
-
-                        // 删除选中的内容
-                        range.deleteContents()
-
-                        // 插入纯文本
-                        const textNode = document.createTextNode(text)
-                        range.insertNode(textNode)
-
-                        // 将光标移动到插入文本的末尾
-                        range.setStartAfter(textNode)
-                        range.setEndAfter(textNode)
-                        range.collapse(true)
-
-                        // 清除所有选择并重新设置
-                        selection.removeAllRanges()
-                        selection.addRange(range)
-                      } else {
-                        // 如果没有选择范围，直接设置文本内容并将光标移到末尾
-                        const currentText =
-                          contentEditableRef.current.textContent || ''
-                        contentEditableRef.current.textContent =
-                          currentText + text
-
-                        // 将光标移动到末尾
-                        const newRange = document.createRange()
-                        const sel = window.getSelection()
-
-                        newRange.selectNodeContents(contentEditableRef.current)
-                        newRange.collapse(false) // 移动到末尾
-
-                        sel?.removeAllRanges()
-                        sel?.addRange(newRange)
-                      }
-
-                      // 触发内容变化处理
-                      handleContentChange()
-                    }
+                  placeholder="Note anything"
+                  className="editable-input"
+                  rows={1}
+                  style={{
+                    resize: 'none',
+                    minHeight: '24px',
                   }}
-                  // data-virtualkeyboard="true"
                 />
               </div>
             </div>
@@ -249,7 +219,7 @@ export default function Home() {
                     data-testid="send-button"
                     className="dark:disabled:bg-token-text-quaternary dark:disabled:text-token-main-surface-secondary flex items-center justify-center rounded-full transition-colors hover:opacity-70 disabled:text-[#f4f4f4] disabled:hover:opacity-100 dark:focus-visible:outline-white bg-black text-white disabled:bg-[#D7D7D7] dark:bg-white dark:text-black h-9 w-9"
                     onClick={handleGenerateNote}
-                    disabled={isGenerating || !content}
+                    disabled={isGenerating || !content.trim()}
                   >
                     <svg
                       width="20"
