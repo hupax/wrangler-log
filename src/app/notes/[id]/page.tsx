@@ -30,7 +30,7 @@ export default function NotePage() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-3xl mx-auto">
         <article className="p-8 md:p-12">
           <MarkdownRenderer content={currentNote?.content || ''} />
         </article>

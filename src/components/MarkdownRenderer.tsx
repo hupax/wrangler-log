@@ -593,19 +593,29 @@ const MarkdownRenderer = memo(
 
               return (
                 <div key={index} className="my-6 group">
-                  <div className="openai-code-container">
+                  <div className="openai-code-container relative">
                     <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
                       <CopyButton text={originalContent} />
                     </div>
 
-                    <div className="overflow-x-auto">
-                      <div className="py-4 px-6">
-                        <pre className="openai-code-content text-sm leading-6 font-mono">
+                    <div
+                      className="overflow-x-auto overflow-y-hidden"
+                      style={{
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: 'rgba(156, 163, 175, 0.5) transparent',
+                      }}
+                    >
+                      <div className="py-4 px-6 min-w-0">
+                        <pre className="openai-code-content text-sm leading-6 font-mono min-w-max">
                           {codeLines.map((line, index) => (
                             <div
                               key={index}
                               className="code-line h-6 leading-6"
-                              style={{ whiteSpace: 'pre', tabSize: 4 }}
+                              style={{
+                                whiteSpace: 'pre',
+                                tabSize: 4,
+                                minWidth: 'max-content',
+                              }}
                             >
                               <code
                                 className={`language-${languageKey}`}
@@ -628,6 +638,41 @@ const MarkdownRenderer = memo(
                       </div>
                     </div>
                   </div>
+
+                  <style jsx>{`
+                    .openai-code-container .overflow-x-auto::-webkit-scrollbar {
+                      height: 8px;
+                    }
+                    .openai-code-container
+                      .overflow-x-auto::-webkit-scrollbar-track {
+                      background: rgba(243, 244, 246, 0.5);
+                      border-radius: 4px;
+                    }
+                    .openai-code-container
+                      .overflow-x-auto::-webkit-scrollbar-thumb {
+                      background: rgba(156, 163, 175, 0.5);
+                      border-radius: 4px;
+                    }
+                    .openai-code-container
+                      .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+                      background: rgba(156, 163, 175, 0.7);
+                    }
+                    .dark
+                      .openai-code-container
+                      .overflow-x-auto::-webkit-scrollbar-track {
+                      background: rgba(55, 65, 81, 0.5);
+                    }
+                    .dark
+                      .openai-code-container
+                      .overflow-x-auto::-webkit-scrollbar-thumb {
+                      background: rgba(107, 114, 128, 0.5);
+                    }
+                    .dark
+                      .openai-code-container
+                      .overflow-x-auto::-webkit-scrollbar-thumb:hover {
+                      background: rgba(107, 114, 128, 0.7);
+                    }
+                  `}</style>
                 </div>
               )
 

@@ -1,5 +1,9 @@
 'use client'
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useNotesStore } from '@/lib/store'
+import { useStreamingNote } from '@/hooks/useStreamingNote'
+import MarkdownRenderer from '@/components/MarkdownRenderer'
 import {
   UploadIcon,
   ToolsIcon,
@@ -7,58 +11,25 @@ import {
   VoiceModeIcon,
   SendIcon,
 } from '@/components/icons'
-import { useRouter } from 'next/navigation'
-import { useNotesStore } from '@/lib/store'
-import { useStreamingNote } from '@/hooks/useStreamingNote'
-import MarkdownRenderer from '@/components/MarkdownRenderer'
 
-export default function Home() {
-  const {
-    content,
-    isGenerating,
-    error: streamError,
-    isComplete,
-    generateNote,
-    reset,
-  } = useStreamingNote()
-
-  const [error, setError] = useState('')
-  const [isComposing, setIsComposing] = useState(false)
+export default function StreamingNotePage() {
   const [inputContent, setInputContent] = useState('')
+  const [isComposing, setIsComposing] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const contentEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const { addNote, user, isAuthenticated, isLoading } = useNotesStore()
+  const { user, addNote } = useNotesStore()
+  const { content, isGenerating, error, isComplete, generateNote, reset } =
+    useStreamingNote()
 
-  // 自动滚动到内容底部（只在用户没有手动滚动时）
-  const [userScrolled, setUserScrolled] = useState(false)
-
+  // 自动滚动到内容底部
   useEffect(() => {
-    if (contentEndRef.current && content && !userScrolled) {
+    if (contentEndRef.current && content) {
       contentEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [content, userScrolled])
+  }, [content])
 
-  // 监听用户滚动
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-      const windowHeight = window.innerHeight
-      const documentHeight = document.documentElement.scrollHeight
-
-      // 如果用户滚动到了非底部位置，标记为用户已滚动
-      if (scrollTop + windowHeight < documentHeight - 100) {
-        setUserScrolled(true)
-      } else {
-        setUserScrolled(false)
-      }
-    }
-
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
-
-  // 初始化时设置textarea高度
+  // 自动调整textarea高度
   useEffect(() => {
     if (textareaRef.current) {
       const maxHeight = 365
@@ -73,43 +44,23 @@ export default function Home() {
         textareaRef.current.style.overflowY = 'hidden'
       }
     }
-  }, [])
+  }, [inputContent])
 
-  // 输入框内容变化
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const text = e.target.value
-    setInputContent(text)
-    setError('')
-
-    // 自动调整高度
-    if (textareaRef.current) {
-      const maxHeight = 365
-
-      textareaRef.current.style.height = 'auto'
-      const scrollHeight = textareaRef.current.scrollHeight
-
-      if (scrollHeight > maxHeight) {
-        textareaRef.current.style.height = maxHeight + 'px'
-        textareaRef.current.style.overflowY = 'auto'
-      } else {
-        textareaRef.current.style.height = scrollHeight + 'px'
-        textareaRef.current.style.overflowY = 'hidden'
-      }
-    }
+    setInputContent(e.target.value)
   }
 
-  // 创建笔记
   const handleGenerateNote = async () => {
     if (!inputContent.trim() || isGenerating || !user) return
 
-    reset()
     await generateNote(inputContent, user.uid)
   }
 
   const handleSaveNote = async () => {
-    if (!content.trim() || !user || !isComplete) return
+    if (!content.trim() || !user) return
 
     try {
+      // 生成标题（简单从内容中提取）
       const title =
         content
           .split('\n')[0]
@@ -141,6 +92,8 @@ export default function Home() {
           prompt: inputContent,
         })
         router.push(`/notes/${data.noteId}`)
+      } else {
+        throw new Error(data.error || 'Failed to save note')
       }
     } catch (error) {
       console.error('Failed to save note:', error)
@@ -150,48 +103,90 @@ export default function Home() {
   const handleNewNote = () => {
     reset()
     setInputContent('')
-    setUserScrolled(false) // 重置滚动状态
   }
 
-  // 如果正在生成或已完成，只显示笔记内容
+  // 如果正在生成或已完成，显示生成界面
   if (isGenerating || content) {
     return (
-      <div className="min-h-screen bg-white dark:bg-gray-900 p-8">
-        <div className="max-w-2xl mx-auto">
-          {/* 顶部简单操作栏 */}
-          <div className="flex justify-between items-center mb-8">
-            <button
-              onClick={handleNewNote}
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm"
-            >
-              ← 返回
-            </button>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          {/* 顶部操作栏 */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handleNewNote}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              >
+                ← 新建笔记
+              </button>
+              {isGenerating && (
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    正在生成...
+                  </span>
+                </div>
+              )}
+            </div>
+
             {isComplete && (
               <button
                 onClick={handleSaveNote}
-                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
               >
                 保存笔记
               </button>
             )}
           </div>
 
-          {/* 只显示笔记内容 */}
-          <div className="prose dark:prose-invert max-w-none">
-            {content ? (
-              <div>
-                <MarkdownRenderer content={content} />
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12">
-                <div className="relative mb-4">
-                  <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-700 rounded-full"></div>
-                  <div className="absolute inset-0 w-8 h-8 border-2 border-gray-600 dark:border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              </div>
-            )}
+          {/* 错误信息 */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+              <p className="text-red-700 dark:text-red-400">{error}</p>
+            </div>
+          )}
+
+          {/* 原始输入 */}
+          <div className="mb-6 p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-2">
+              原始输入
+            </h3>
+            <p className="text-gray-700 dark:text-gray-300 text-sm">
+              {inputContent}
+            </p>
           </div>
-          <div ref={contentEndRef} />
+
+          {/* 生成的内容 */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                生成的笔记
+              </h2>
+              {isGenerating && (
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-xs text-gray-500">实时生成中</span>
+                </div>
+              )}
+            </div>
+
+            <div className="prose dark:prose-invert max-w-none">
+              {content ? (
+                <div>
+                  <MarkdownRenderer content={content} />
+                  {/* 简单的光标效果 */}
+                  {isGenerating && (
+                    <span className="inline-block w-0.5 h-5 bg-gray-800 dark:bg-gray-200 ml-1 animate-pulse"></span>
+                  )}
+                </div>
+              ) : (
+                <div className="text-gray-500 dark:text-gray-400 italic">
+                  等待内容生成...
+                </div>
+              )}
+            </div>
+            <div ref={contentEndRef} />
+          </div>
         </div>
       </div>
     )
@@ -200,13 +195,10 @@ export default function Home() {
   // 初始输入界面
   return (
     <div className="home-container">
-      <h1 className="home-title">What's on your mind today?</h1>
-
-      {(error || streamError) && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error || streamError}
-        </div>
-      )}
+      <h1 className="home-title">流式笔记生成</h1>
+      <p className="text-gray-600 dark:text-gray-400 text-center mb-8">
+        体验真正的流式笔记生成
+      </p>
 
       <div className="composer-container">
         <div className="composer-form">
@@ -229,7 +221,7 @@ export default function Home() {
                   }}
                   onCompositionStart={() => setIsComposing(true)}
                   onCompositionEnd={() => setIsComposing(false)}
-                  placeholder="Note anything"
+                  placeholder="输入任何内容，AI 将实时为你生成结构化笔记..."
                   className="editable-input"
                   rows={1}
                   style={{
@@ -272,6 +264,7 @@ export default function Home() {
                     onClick={handleGenerateNote}
                     disabled={isGenerating || !inputContent.trim()}
                     className="flex items-center justify-center rounded-full transition-colors hover:opacity-70 disabled:text-[#f4f4f4] disabled:hover:opacity-100 dark:focus-visible:outline-white bg-black text-white disabled:bg-[#D7D7D7] dark:bg-white dark:text-black h-9 w-9"
+                    aria-label="Generate note"
                   >
                     <SendIcon className="icon" />
                   </button>

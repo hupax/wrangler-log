@@ -8,9 +8,9 @@ import { GitHubIcon, ConnectedIcon, DisconnectedIcon } from './icons'
 export default function GithubSettings() {
   const {
     githubConfig,
-    setGithubConfig,
+    setGitHubConfig,
     isGitHubConnected,
-    setGithubConnected,
+    setGitHubConnected,
     user,
   } = useNotesStore()
 
@@ -65,8 +65,8 @@ export default function GithubSettings() {
         setRepoInfo(repoInfo)
 
         // 保存到状态管理
-        setGithubConfig(config)
-        setGithubConnected(true)
+        setGitHubConfig(config)
+        setGitHubConnected(true)
 
         // TODO: 保存到数据库
         await saveGithubConfigToDatabase(config)
@@ -94,8 +94,8 @@ export default function GithubSettings() {
   }
 
   const handleDisconnect = async () => {
-    setGithubConfig(null)
-    setGithubConnected(false)
+    setGitHubConfig(null)
+    setGitHubConnected(false)
     setRepoInfo(null)
     setTestResult(null)
 

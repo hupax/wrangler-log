@@ -1,341 +1,485 @@
 # AI 笔记生成器 🤖📝
 
-一个基于 Next.js + TypeScript 的智能笔记应用，能够将任意数据交给 AI 整理成结构化
-的 Markdown 笔记。
+一个基于 Next.js + TypeScript 的智能笔记应用，集成 GitHub 同步功能，支持文件夹组
+织，能够将任意数据交给 AI 整理成结构化的 Markdown 笔记。
 
 ![项目主界面](./docs/images/main-interface.png)
 
-## 🚀 技术栈
+## 🚀 核心特性
+
+### 🎯 智能笔记生成
+
+- **AI 驱动** - 使用 Google Cloud Vertex AI 智能整理内容
+- **结构化输出** - 自动生成标准 Markdown 格式笔记
+- **内容增强** - AI 自动补充相关知识和深入见解
+- **智能标题** - 根据内容自动生成合适的标题
+
+### 📁 文件夹管理
+
+- **层次结构** - 支持无限层级的文件夹嵌套
+- **拖拽操作** - 直观的文件夹和笔记管理
+- **树形视图** - 清晰的文件夹树形展示
+- **批量操作** - 支持文件夹和笔记的批量管理
+
+### 🔗 GitHub 集成
+
+- **双向同步** - 应用与 GitHub 仓库之间的双向同步
+- **版本控制** - 完整的版本历史和冲突解决
+- **导入功能** - 从现有 GitHub 仓库导入笔记和文件夹结构
+- **实时状态** - 同步状态实时显示和监控
+
+### 🎨 现代化界面
+
+- **响应式设计** - 完美适配桌面和移动设备
+- **暗色模式** - 支持明暗主题切换
+- **优雅动画** - 流畅的交互动画和过渡效果
+- **直观操作** - 简洁直观的用户界面
+
+## 🛠 技术栈
 
 **前端架构**
 
-- **Next.js 15** - 最新的 React 全栈框架，支持 App Router
+- **Next.js 15** - 最新的 React 全栈框架，使用 App Router
 - **TypeScript** - 完整的类型安全保障
 - **Tailwind CSS** - 现代化 CSS 框架
 - **Zustand** - 轻量级状态管理
+- **React 19** - 最新的 React 版本
 
 **后端服务**
 
 - **Google Cloud Vertex AI** - 企业级 AI 文本生成
 - **Firebase Firestore** - 实时数据库
-- **Firebase Storage** - 文件存储服务
+- **Firebase Auth** - 用户认证系统
+- **GitHub API** - 版本控制和同步
 
-**核心特性**
+**开发工具**
 
-- 🎨 自定义 Markdown 渲染器，支持语法高亮
-- 📱 响应式设计，完美适配各种设备
-- ⚡ 优雅的加载动画和用户体验
-- 🔄 实时数据同步
+- **Turbopack** - 超快的开发构建工具
+- **Prism.js** - 代码语法高亮
+- **KaTeX** - 数学公式渲染
+- **DOMPurify** - 内容安全过滤
 
 ## 📂 项目架构
 
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── api/               # API路由
-│   │   ├── notes/         # 笔记CRUD接口
-│   │   ├── generative/    # AI生成接口
-│   │   └── upload-file/   # 文件上传接口
+│   ├── api/               # API 路由
+│   │   ├── notes/         # 笔记 CRUD 接口
+│   │   ├── folders/       # 文件夹管理接口
+│   │   ├── github/        # GitHub 集成接口
+│   │   └── generative/    # AI 生成接口
 │   ├── notes/[id]/        # 动态笔记详情页
+│   ├── github-settings/   # GitHub 配置页面
 │   └── page.tsx           # 主页面
-├── components/            # React组件
-│   ├── MarkdownRenderer.tsx  # 自定义Markdown渲染器
+├── components/            # React 组件
+│   ├── auth/             # 认证相关组件
+│   │   ├── AuthProvider.tsx
+│   │   ├── LoginButton.tsx
+│   │   ├── ProtectedRoute.tsx
+│   │   └── UserProfile.tsx
+│   ├── FolderTree.tsx     # 文件夹树组件
+│   ├── GithubSettings.tsx # GitHub 设置组件
+│   ├── SyncStatusIcon.tsx # 同步状态图标
+│   ├── MarkdownRenderer.tsx # Markdown 渲染器
 │   ├── Layout.tsx         # 全局布局
 │   ├── Sidebar.tsx        # 侧边栏
 │   └── Navbar.tsx         # 导航栏
 ├── lib/                   # 核心逻辑
-│   ├── ai.ts             # AI服务封装
-│   ├── firebase.ts       # Firebase配置
-│   ├── store.tsx         # Zustand状态管理
+│   ├── ai.ts             # AI 服务封装
+│   ├── auth.ts           # 认证逻辑
+│   ├── firebase.ts       # Firebase 配置
+│   ├── github.ts         # GitHub 服务
+│   ├── store.tsx         # Zustand 状态管理
 │   └── utils.ts          # 工具函数
+├── hooks/                # 自定义 Hooks
+│   └── useAuth.ts        # 认证 Hook
 └── styles/               # 样式文件
+    ├── globals.css
+    ├── code-block.css
+    └── prism.css
 ```
 
 ## 🧠 核心实现
 
-### 1. 状态管理架构
+### 1. 增强的状态管理
 
-使用 Zustand 构建的类型安全状态管理，简洁而强大：
+使用 Zustand 构建的类型安全状态管理，现在包含完整的 GitHub 集成和文件夹功能：
 
 ```typescript
 interface NotesStore {
+  // 基础状态
   notes: Note[]
+  user: User | null
   currentNote: Note | null
   isLoading: boolean
-  isGenerating: boolean
+  isAuthenticated: boolean
 
-  // Actions
-  setNotes: (notes: Note[]) => void
-  addNote: (note: Note) => void
-  updateNote: (id: string, updates: Partial<Note>) => void
-  deleteNote: (id: string) => void
-  setCurrentNote: (note: Note | null) => void
-}
+  // GitHub 集成
+  githubConfig: GitHubConfig | null
+  isGitHubConnected: boolean
 
-export const useNotesStore = create<NotesStore>((set, get) => ({
-  // 状态定义和更新逻辑
-}))
-```
+  // 文件夹管理
+  folders: Folder[]
+  currentFolder: Folder | null
+  expandedFolders: Set<string>
 
-![状态管理流程图](./docs/images/state-flow.png)
+  // 增强的笔记模型
+  interface Note {
+    id: string
+    userId: string
+    title: string
+    content: string
+    createdAt: Date | string
+    updatedAt: Date | string
 
-### 2. AI 服务集成
+    // GitHub 同步
+    githubPath?: string
+    githubSha?: string
+    lastSyncedAt?: Date | string
+    syncStatus?: 'synced' | 'pending' | 'conflict' | 'error' | 'not_synced'
 
-封装 Google Cloud Vertex AI，实现智能内容生成：
+    // 文件夹关联
+    folderId?: string | null
 
-```typescript
-export async function generateNote(prompt: string) {
-  const vertexAI = new VertexAI({
-    project: GOOGLE_CLOUD_PROJECT,
-    location: GOOGLE_CLOUD_LOCATION,
-  })
-
-  const generativeModel = vertexAI.getGenerativeModel({
-    model: MODEL_NAME || '',
-  })
-
-  const fullPrompt = `帮我将以下内容整理并补充为一篇笔记，
-  你也可以提供一下深入见解。注意：你返回的回答内容必须全部都是md格式的内容，
-  并且只能包含和这篇笔记有关的内容。内容：\n\n${prompt}`
-
-  const req = {
-    contents: [
-      {
-        role: 'user',
-        parts: [{ text: fullPrompt }],
-      },
-    ],
-  }
-
-  const resp = await generativeModel.generateContentStream(req)
-  const contentResponse = await resp.response
-  return contentResponse?.candidates?.[0]?.content?.parts?.[0]?.text || ''
-}
-```
-
-### 3. 自定义 Markdown 渲染器
-
-这是项目的核心亮点 - 一个功能丰富的 Markdown 渲染组件：
-
-```typescript
-const MarkdownRenderer = memo(({ content, className = '' }) => {
-  // 解析Markdown为结构化数据
-  const parseMarkdown = useCallback((markdownContent: string): Section[] => {
-    const lines = markdownContent.split('\n')
-    const sections: Section[] = []
-
-    // 支持代码块、列表、表格、引用等多种元素
-    // 智能解析嵌套结构
-
-    return sections
-  }, [])
-
-  // 语法高亮映射
-  const languageKey = (() => {
-    const lang = section.language?.toLowerCase() || 'text'
-    if (lang === 'dockerfile') return 'docker'
-    if (lang === 'cpp' || lang === 'c++') return 'java'
-    return lang
-  })()
-
-  // 使用Prism.js进行语法高亮
-  return (
-    <div className="markdown-renderer">
-      {sections.map((section, index) => (
-        // 渲染各种Markdown元素
-      ))}
-    </div>
-  )
-})
-```
-
-![Markdown渲染效果](./docs/images/markdown-rendering.png)
-
-### 4. API 设计
-
-RESTful 风格的 API 设计，类型安全的数据交换：
-
-```typescript
-// GET /api/notes - 获取笔记列表
-export async function GET() {
-  try {
-    const q = query(collection(db, 'notes'), orderBy('updatedAt', 'desc'))
-    const querySnapshot = await getDocs(q)
-
-    const notes = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate(),
-      updatedAt: doc.data().updatedAt?.toDate(),
-    }))
-
-    return NextResponse.json({ notes })
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Failed to fetch notes' },
-      { status: 500 }
-    )
+    // 其他属性
+    prompt?: string
+    tags?: string[]
   }
 }
+```
 
-// POST /api/notes - AI生成新笔记
-export async function POST(request: NextRequest) {
-  const { prompt } = await request.json()
+### 2. GitHub 服务集成
 
-  const content = await generateNote(prompt)
-  const title = await generateNoteTitle(content)
+完整的 GitHub API 集成，支持仓库连接、内容同步和版本控制：
 
-  const noteRef = await addDoc(collection(db, 'notes'), {
-    title: title.trim(),
-    content,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    prompt: prompt || null,
-  })
+```typescript
+export class GitHubService {
+  private config: GitHubConfig
 
-  return NextResponse.json({
-    success: true,
-    noteId: noteRef.id,
-    title,
-    content,
-  })
+  // 连接测试
+  async testConnection(): Promise<{ success: boolean; error?: string }>
+
+  // 仓库信息
+  async getRepoInfo()
+
+  // 内容获取
+  async getContents(path: string = '')
+
+  // 文件操作
+  async createFile(path: string, content: string, message: string)
+  async updateFile(path: string, content: string, message: string, sha: string)
+  async deleteFile(path: string, message: string, sha: string)
+
+  // 批量导入
+  async importNotesFromRepo(): Promise<ImportResult>
 }
 ```
 
-### 5. 优雅的加载体验
+### 3. 文件夹树形结构
 
-简洁的 OpenAI 风格加载动画：
+支持无限层级嵌套的文件夹系统：
 
 ```typescript
-// 简洁的加载页面
-if (isGenerating) {
-  return (
-    <div className="fixed inset-0 bg-white flex items-center justify-center">
-      <div className="relative">
-        {/* 呼吸圆形动画 */}
-        <div className="w-16 h-16 bg-black rounded-full animate-pulse"></div>
+interface Folder {
+  id: string
+  userId: string
+  name: string
+  parentId?: string // 父文件夹ID，支持嵌套
+  githubPath?: string // GitHub 路径映射
+  createdAt: Date | string
+  updatedAt: Date | string
+}
 
-        {/* 外圈呼吸效果 */}
-        <div className="absolute inset-0 w-16 h-16 bg-black rounded-full opacity-20 animate-ping"></div>
+// 递归渲染文件夹树
+const renderFolderNode = (folder: any, level: number = 0) => {
+  const isExpanded = expandedFolders.has(folder.id)
+  const folderNotes = getFolderNotes(folder.id)
+  const hasChildren = folder.children.length > 0 || folderNotes.length > 0
+
+  return (
+    <div key={folder.id} className="select-none">
+      {/* 文件夹节点 */}
+      <div
+        className="flex items-center gap-2"
+        style={{ paddingLeft: `${12 + level * 16}px` }}
+      >
+        {/* 展开/收起图标 */}
+        {/* 文件夹图标 */}
+        {/* 文件夹名称和笔记数量 */}
+        {/* 同步状态图标 */}
       </div>
+
+      {/* 递归渲染子文件夹和笔记 */}
+      {isExpanded && (
+        <div className="ml-4">
+          {folder.children.map(child => renderFolderNode(child, level + 1))}
+          {folderNotes.map(note => renderNoteItem(note, level))}
+        </div>
+      )}
     </div>
   )
 }
 ```
 
-![加载动画效果](./docs/images/loading-animation.png)
+### 4. 同步状态管理
+
+实时显示笔记和文件夹的同步状态：
+
+```typescript
+type SyncStatus = 'synced' | 'pending' | 'conflict' | 'error' | 'not_synced'
+
+const SyncStatusIcon = ({ status, size = 16 }) => {
+  const statusConfig = {
+    synced: { icon: '✅', color: 'text-green-500', title: '已同步到 GitHub' },
+    pending: { icon: '⏳', color: 'text-yellow-500', title: '正在同步' },
+    conflict: { icon: '⚠️', color: 'text-red-500', title: '存在冲突' },
+    error: { icon: '❌', color: 'text-red-500', title: '同步失败' },
+    not_synced: { icon: '☁️', color: 'text-gray-400', title: '未同步' },
+  }
+
+  return (
+    <span
+      className={statusConfig[status].color}
+      title={statusConfig[status].title}
+    >
+      {statusConfig[status].icon}
+    </span>
+  )
+}
+```
+
+### 5. 用户认证系统
+
+完整的 Firebase 认证集成：
+
+```typescript
+// 认证提供者
+export default function AuthProvider({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  const { setUser, setLoading } = useNotesStore()
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      if (user) {
+        setUser({
+          uid: user.uid,
+          email: user.email || '',
+          displayName: user.displayName || '',
+          photoURL: user.photoURL || '',
+        })
+      } else {
+        setUser(null)
+      }
+      setLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [setUser, setLoading])
+
+  return <>{children}</>
+}
+```
 
 ## 🎨 UI/UX 设计
 
 ### 响应式布局
 
-- 左侧边栏：笔记列表和导航
-- 主内容区：AI 输入界面/笔记详情
-- 移动端适配：侧边栏自动折叠
+- **三栏布局** - 导航栏 + 侧边栏 + 主内容区
+- **文件夹树** - 左侧显示完整的文件夹结构
+- **笔记列表** - 按文件夹分组显示笔记
+- **移动端适配** - 自适应布局，侧边栏可折叠
 
 ### 交互细节
 
-- 平滑的过渡动画
-- 键盘快捷键支持（Enter 提交）
-- 悬浮效果和微交互
-- 暗色模式兼容
+- **拖拽支持** - 文件夹和笔记的拖拽操作
+- **键盘快捷键** - 常用操作的快捷键支持
+- **实时搜索** - 笔记和文件夹的实时搜索
+- **批量操作** - 支持多选和批量操作
 
-![界面设计展示](./docs/images/ui-showcase.png)
+### 同步状态可视化
 
-## 🔧 核心功能
+- **状态图标** - 每个笔记显示同步状态
+- **进度指示** - 同步进度的实时显示
+- **冲突解决** - 可视化的冲突解决界面
+- **历史记录** - 完整的同步历史记录
+
+## 🔧 功能模块
 
 ### 1. 智能笔记生成
 
-用户输入任意内容，AI 自动：
-
-- 结构化整理信息
-- 补充相关知识
-- 生成合适的标题
-- 输出标准 Markdown 格式
-
-### 2. 实时笔记管理
-
-- 侧边栏实时显示笔记列表
-- 支持笔记的增删改查
-- 自动保存到 Firebase 云端
-- 跨设备数据同步
-
-### 3. 高级 Markdown 渲染
-
-- 语法高亮（支持多种编程语言）
-- 表格、列表、引用块
-- 数学公式支持
-- 代码块复制功能
-
-![功能演示](./docs/images/features-demo.png)
-
-## 🚀 技术亮点
-
-### TypeScript 全栈类型安全
-
 ```typescript
-interface Note {
-  id: string
-  title: string
-  content: string
-  createdAt: Date
-  updatedAt: Date
-  isGenerated: boolean
-  prompt?: string
-  tags?: string[]
+// AI 生成笔记
+export async function generateNote(prompt: string): Promise<string> {
+  const vertexAI = new VertexAI({
+    project: GOOGLE_CLOUD_PROJECT,
+    location: GOOGLE_CLOUD_LOCATION,
+  })
+
+  const model = vertexAI.getGenerativeModel({ model: MODEL_NAME })
+  const fullPrompt = `帮我将以下内容整理并补充为一篇笔记，
+  你也可以提供一下深入见解。注意：你返回的回答内容必须全部都是md格式的内容，
+  并且只能包含和这篇笔记有关的内容。内容：\n\n${prompt}`
+
+  const result = await model.generateContentStream({
+    contents: [{ role: 'user', parts: [{ text: fullPrompt }] }],
+  })
+
+  const response = await result.response
+  return response?.candidates?.[0]?.content?.parts?.[0]?.text || ''
 }
 ```
 
-### Next.js 15 新特性运用
+### 2. 文件夹管理
 
-- App Router 架构
-- 服务端组件优化
-- 动态路由和参数处理
-- API Routes 集成
+```typescript
+// 文件夹 CRUD API
+export async function POST(request: NextRequest) {
+  const { name, parentId, userId } = await request.json()
 
-### 状态管理最佳实践
+  const folderRef = await addDoc(collection(db, 'folders'), {
+    name,
+    parentId: parentId || null,
+    userId,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  })
 
-- Zustand 轻量级方案
-- 类型安全的状态更新
-- 组件间数据共享
-- 持久化存储支持
+  return NextResponse.json({ success: true, folderId: folderRef.id })
+}
+```
 
-### 性能优化
+### 3. GitHub 同步
 
-- React.memo 防止不必要重渲染
-- useCallback 缓存函数
-- 代码分割和懒加载
-- 图片和资源优化
+```typescript
+// GitHub 配置保存
+export async function POST(request: NextRequest) {
+  const { config, userId } = await request.json()
+
+  // 验证 GitHub 连接
+  const githubService = new GitHubService(config)
+  const connectionResult = await githubService.testConnection()
+
+  if (connectionResult.success) {
+    // 保存配置到 Firestore
+    await setDoc(doc(db, 'github_configs', userId), {
+      ...config,
+      updatedAt: serverTimestamp(),
+    })
+
+    return NextResponse.json({ success: true })
+  }
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: connectionResult.error,
+    },
+    { status: 400 }
+  )
+}
+```
 
 ## 📦 部署和运行
 
+### 环境配置
+
 ```bash
+# 克隆项目
+git clone <repository-url>
+cd wrangler
+
 # 安装依赖
 npm install
 
 # 配置环境变量
 cp .env.example .env.local
-# 填入Firebase和Google Cloud配置
+```
 
-# 启动开发服务器
+### 环境变量设置
+
+```env
+# Google Cloud Vertex AI
+GOOGLE_CLOUD_PROJECT=your-project-id
+GOOGLE_CLOUD_LOCATION=us-central1
+GOOGLE_CLOUD_CREDENTIALS=path/to/service-account.json
+
+# Firebase 配置
+NEXT_PUBLIC_FIREBASE_API_KEY=your-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-auth-domain
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-storage-bucket
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
+NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
+```
+
+### 启动开发服务器
+
+```bash
+# 开发模式（使用 Turbopack）
 npm run dev
 
-# 构建生产版本
+# 生产构建
 npm run build
 npm start
 ```
 
-## 🎯 项目特色
+## 🎯 项目亮点
+
+### 技术创新
 
 1. **完整的 TypeScript 实现** - 从前端到后端的全链路类型安全
-2. **现代化技术栈** - 使用最新的 React 和 Next.js 特性
-3. **优雅的代码架构** - 模块化设计，易于维护和扩展
-4. **用户体验优先** - 细致的交互设计和性能优化
-5. **AI 深度集成** - 不只是简单调用，而是深度的业务场景结合
+2. **现代化技术栈** - Next.js 15 + React 19 + Turbopack
+3. **智能 AI 集成** - 深度集成 Google Cloud Vertex AI
+4. **实时同步架构** - Firebase + GitHub 双向同步
+5. **组件化设计** - 高度可复用的组件架构
 
-这个项目展示了如何用现代化的前端技术栈构建一个功能完整、体验优秀的 AI 应用。每个
-技术选型都有其考虑，每行代码都追求质量和可维护性。
+### 功能特色
+
+1. **文件夹管理** - 支持无限层级的文件夹嵌套
+2. **GitHub 集成** - 完整的版本控制和同步功能
+3. **智能生成** - AI 驱动的内容生成和优化
+4. **实时协作** - 多设备间的实时数据同步
+5. **用户体验** - 直观的界面和流畅的交互
+
+### 架构优势
+
+1. **模块化设计** - 清晰的代码结构和组件分离
+2. **类型安全** - 完整的 TypeScript 类型定义
+3. **性能优化** - 代码分割、懒加载和缓存策略
+4. **可扩展性** - 易于添加新功能和集成
+5. **可维护性** - 清晰的代码结构和文档
+
+## 🚀 未来规划
+
+### 短期目标
+
+- [ ] 完善文件夹 UI 集成
+- [ ] 实现 GitHub 批量导入
+- [ ] 添加同步冲突解决
+- [ ] 优化移动端体验
+
+### 中期目标
+
+- [ ] 多人协作功能
+- [ ] 插件系统
+- [ ] 主题定制
+- [ ] 高级搜索
+
+### 长期目标
+
+- [ ] 多云存储支持
+- [ ] AI 助手功能
+- [ ] 数据分析面板
+- [ ] 企业级功能
 
 ---
 
-_Built with ❤️ using Next.js + TypeScript_
+这个项目展示了如何用现代化的技术栈构建一个功能完整、体验优秀的 AI 笔记应用。每个
+技术选型都经过深思熟虑，每行代码都追求质量和可维护性。通过 GitHub 集成和文件夹管
+理，用户可以更好地组织和同步自己的知识体系。
+
+_Built with ❤️ using Next.js 15 + TypeScript + AI_

@@ -44,19 +44,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - 创建新笔记（包括AI生成）
+// POST - 创建新笔记（包括AI生成和流式生成）
 export async function POST(request: NextRequest) {
   try {
     const {
       prompt,
       userId,
+      title,
+      content,
+      isStreamGenerated = false,
     } = await request.json()
 
     // 验证必需的参数
-    if (!prompt) {
-      return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
-    }
-
     if (!userId) {
       return NextResponse.json(
         { error: 'User authentication required' },
@@ -64,33 +63,48 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // console.log('Creating note for user:', userId, 'with prompt:', prompt)
+    let finalTitle = title
+    let finalContent = content
 
-    const content = process(await generateNote(prompt))
-    const title = await generateNoteTitle(content)
+    // 如果是流式生成的笔记，直接使用提供的内容
+    if (isStreamGenerated) {
+      if (!title || !content) {
+        return NextResponse.json(
+          {
+            error: 'Title and content are required for stream generated notes',
+          },
+          { status: 400 }
+        )
+      }
+    } else {
+      // 传统AI生成模式
+      if (!prompt) {
+        return NextResponse.json(
+          { error: 'Prompt is required' },
+          { status: 400 }
+        )
+      }
 
-    // console.log('Generated content and title:', {
-    //   title,
-    //   contentLength: content.length,
-    // })
+      finalContent = process(await generateNote(prompt))
+      finalTitle = await generateNoteTitle(finalContent)
+    }
 
     // 使用嵌套集合结构：notes/{userId}/userNotes/{noteId}
     const noteRef = await addDoc(collection(db, 'notes', userId, 'userNotes'), {
-      title: title.trim(),
-      prompt: prompt,
-      content,
+      title: finalTitle.trim(),
+      prompt: prompt || '',
+      content: finalContent,
       userId,
+      isStreamGenerated,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     })
 
-    // console.log('Note created successfully:', noteRef.id)
-
     return NextResponse.json({
       success: true,
       noteId: noteRef.id,
-      title: title.trim(),
-      content,
+      title: finalTitle.trim(),
+      content: finalContent,
       userId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
