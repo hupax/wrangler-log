@@ -4,12 +4,10 @@ import { useParams } from 'next/navigation'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 import { useNotesStore } from '@/lib/store'
 
-
 export default function NotePage() {
   const params = useParams()
   const noteId = params.id as string
-  const { fetchNote, currentNote, isAuthenticated, user } =
-    useNotesStore()
+  const { fetchNote, currentNote, isAuthenticated, user } = useNotesStore()
 
   useEffect(() => {
     const loadNote = async () => {
@@ -27,9 +25,8 @@ export default function NotePage() {
     }
   }, [noteId, isAuthenticated, user?.uid, fetchNote])
 
-
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4">
       <div className="max-w-3xl mx-auto">
         <article className="p-8 md:p-12">
           <MarkdownRenderer content={currentNote?.content || ''} />

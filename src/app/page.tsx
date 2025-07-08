@@ -42,21 +42,29 @@ export default function Home() {
   // 监听用户滚动
   useEffect(() => {
     const handleScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-      const windowHeight = window.innerHeight
-      const documentHeight = document.documentElement.scrollHeight
+      // 获取主内容区域的滚动容器
+      const mainElement = document.querySelector('main')
+      if (!mainElement) return
+
+      const scrollTop = mainElement.scrollTop
+      const scrollHeight = mainElement.scrollHeight
+      const clientHeight = mainElement.clientHeight
 
       // 如果用户滚动到了非底部位置，标记为用户已滚动
-      if (scrollTop + windowHeight < documentHeight - 100) {
+      if (scrollTop + clientHeight < scrollHeight - 100) {
         setUserScrolled(true)
       } else {
         setUserScrolled(false)
       }
     }
 
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [])
+    // 监听主内容区域的滚动事件
+    const mainElement = document.querySelector('main')
+    if (mainElement) {
+      mainElement.addEventListener('scroll', handleScroll)
+      return () => mainElement.removeEventListener('scroll', handleScroll)
+    }
+  }, [isGenerating, content]) // 添加依赖，确保在内容变化时重新绑定
 
   // 初始化时设置textarea高度
   useEffect(() => {
@@ -199,91 +207,95 @@ export default function Home() {
 
   // 初始输入界面
   return (
-    <div className="home-container">
-      <h1 className="home-title">What's on your mind today?</h1>
+    <div className="h-full flex flex-col items-center justify-center px-4">
+      <div className="w-full max-w-2xl">
+        <h1 className="text-2xl font-normal text-center mb-8">
+          What's on your mind today?
+        </h1>
 
-      {(error || streamError) && (
-        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error || streamError}
-        </div>
-      )}
+        {(error || streamError) && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error || streamError}
+          </div>
+        )}
 
-      <div className="composer-container">
-        <div className="composer-form">
-          <div className="input-wrapper">
-            <div className="input-container">
-              <div className="input-content">
-                <textarea
-                  ref={textareaRef}
-                  value={inputContent}
-                  onChange={handleContentChange}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
-                      if (inputContent.trim()) {
-                        e.preventDefault()
-                        handleGenerateNote()
-                      } else {
-                        e.preventDefault()
+        <div className="composer-container">
+          <div className="composer-form">
+            <div className="input-wrapper">
+              <div className="input-container">
+                <div className="input-content">
+                  <textarea
+                    ref={textareaRef}
+                    value={inputContent}
+                    onChange={handleContentChange}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
+                        if (inputContent.trim()) {
+                          e.preventDefault()
+                          handleGenerateNote()
+                        } else {
+                          e.preventDefault()
+                        }
                       }
-                    }
-                  }}
-                  onCompositionStart={() => setIsComposing(true)}
-                  onCompositionEnd={() => setIsComposing(false)}
-                  placeholder="Note anything"
-                  className="editable-input"
-                  rows={1}
-                  style={{
-                    resize: 'none',
-                    minHeight: '24px',
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="button-area">
-              <div className="left-buttons">
-                <button
-                  type="button"
-                  className="action-button"
-                  aria-label="Add photos and files"
-                >
-                  <UploadIcon className="w-5 h-5" />
-                </button>
-                <button
-                  type="button"
-                  className="tools-button"
-                  aria-label="Choose tool"
-                >
-                  <ToolsIcon className="w-5 h-5" />
-                  <span className="tools-text">Tools</span>
-                </button>
+                    }}
+                    onCompositionStart={() => setIsComposing(true)}
+                    onCompositionEnd={() => setIsComposing(false)}
+                    placeholder="Note anything"
+                    className="editable-input"
+                    rows={1}
+                    style={{
+                      resize: 'none',
+                      minHeight: '24px',
+                    }}
+                  />
+                </div>
               </div>
 
-              <div className="right-buttons">
-                <button
-                  type="button"
-                  className="action-button"
-                  aria-label="Dictate button"
-                >
-                  <MicIcon className="w-5 h-5" />
-                </button>
-                {inputContent.trim() ? (
-                  <button
-                    onClick={handleGenerateNote}
-                    disabled={isGenerating || !inputContent.trim()}
-                    className="flex items-center justify-center rounded-full transition-colors hover:opacity-70 disabled:text-[#f4f4f4] disabled:hover:opacity-100 dark:focus-visible:outline-white bg-black text-white disabled:bg-[#D7D7D7] dark:bg-white dark:text-black h-9 w-9"
-                  >
-                    <SendIcon className="icon" />
-                  </button>
-                ) : (
+              <div className="button-area">
+                <div className="left-buttons">
                   <button
                     type="button"
-                    className="voice-mode-button"
-                    aria-label="Start voice mode"
+                    className="action-button"
+                    aria-label="Add photos and files"
                   >
-                    <VoiceModeIcon className="icon" />
+                    <UploadIcon className="w-5 h-5" />
                   </button>
-                )}
+                  <button
+                    type="button"
+                    className="tools-button"
+                    aria-label="Choose tool"
+                  >
+                    <ToolsIcon className="w-5 h-5" />
+                    <span className="tools-text">Tools</span>
+                  </button>
+                </div>
+
+                <div className="right-buttons">
+                  <button
+                    type="button"
+                    className="action-button"
+                    aria-label="Dictate button"
+                  >
+                    <MicIcon className="w-5 h-5" />
+                  </button>
+                  {inputContent.trim() ? (
+                    <button
+                      onClick={handleGenerateNote}
+                      disabled={isGenerating || !inputContent.trim()}
+                      className="flex items-center justify-center rounded-full transition-colors hover:opacity-70 disabled:text-[#f4f4f4] disabled:hover:opacity-100 dark:focus-visible:outline-white bg-black text-white disabled:bg-[#D7D7D7] dark:bg-white dark:text-black h-9 w-9"
+                    >
+                      <SendIcon className="icon" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="voice-mode-button"
+                      aria-label="Start voice mode"
+                    >
+                      <VoiceModeIcon className="icon" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

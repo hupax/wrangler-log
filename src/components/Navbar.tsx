@@ -16,13 +16,11 @@ import LoginButton from './auth/LoginButton'
 interface NavbarProps {
   onToggleSidebar: () => void
   isSidebarOpen: boolean
-  shouldAnimate?: boolean
 }
 
 export default function Header({
   onToggleSidebar,
   isSidebarOpen,
-  shouldAnimate = false,
 }: NavbarProps) {
   const [isScrolled, setIsScrolled] = useState(false)
 
@@ -61,9 +59,7 @@ export default function Header({
           }`}
           style={{
             transform: isSidebarOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-            transition: shouldAnimate
-              ? 'all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)'
-              : 'none',
+            transition: 'all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)',
             willChange: 'transform, opacity, scale',
           }}
         >
@@ -77,9 +73,7 @@ export default function Header({
               : 'opacity-100 scale-100'
           }`}
           style={{
-            transition: shouldAnimate
-              ? 'all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)'
-              : 'none',
+            transition: 'all 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)',
             willChange: 'opacity, scale',
           }}
           onClick={() => {
