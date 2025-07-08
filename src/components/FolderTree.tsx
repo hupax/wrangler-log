@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useNotesStore } from '@/lib/store'
+import { useNotesStore } from '@/stores/notes'
 import {
   FolderIcon,
   FolderOpenIcon,

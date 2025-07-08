@@ -9,7 +9,8 @@ import {
 import Link from 'next/link'
 import React, { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { useNotesStore } from '@/lib/store'
+import { useAuthStore } from '@/stores/auth'
+import { useNotesStore } from '@/stores/notes'
 import NoteOptionsMenu from './NoteOptionsMenu'
 
 interface SidebarProps {
@@ -20,7 +21,8 @@ interface SidebarProps {
 const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const router = useRouter()
   const pathname = usePathname() || '/notes/1'
-  const { user, isLoading } = useNotesStore()
+  const { user, isLoading } = useAuthStore()
+  const { notes, fetchNotes } = useNotesStore()
   const [activeMenuNoteId, setActiveMenuNoteId] = useState<string | null>(null)
   const buttonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({})
 
@@ -31,8 +33,6 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       return
     }
   }
-
-  const { notes, setNotes } = useNotesStore()
 
   const handleOptionsClick = (e: React.MouseEvent, noteId: string) => {
     e.preventDefault()
@@ -46,29 +46,19 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
 
   // 加载笔记列表
   useEffect(() => {
-    const fetchNotes = async () => {
+    const loadNotes = async () => {
+      // 如果还在加载中或用户未登录，不要发送请求
+      if (isLoading || !user) return
+
       try {
-        // 如果还在加载中，不要发送请求
-        if (isLoading) return
-
-        // 如果用户未登录，清空笔记列表
-        if (!user) {
-          setNotes([])
-          return
-        }
-
-        const response = await fetch(`/api/notes?userId=${user.uid}`)
-        const data = await response.json()
-        if (data.notes) {
-          setNotes(data.notes)
-        }
+        await fetchNotes(user)
       } catch (error) {
         console.error('Failed to fetch notes:', error)
       }
     }
 
-    fetchNotes()
-  }, [setNotes, user, isLoading])
+    loadNotes()
+  }, [fetchNotes, user, isLoading])
 
   const menuItems = [
     {

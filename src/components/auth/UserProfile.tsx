@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useNotesStore } from '@/lib/store'
+import { useAuthStore } from '@/stores/auth'
+import { useNotesStore } from '@/stores/notes'
+import { useGitHubStore } from '@/stores/github'
 import { auth } from '@/lib/firebase'
 import { signOut } from 'firebase/auth'
 import {
@@ -16,14 +18,18 @@ import {
 } from '@/components/icons'
 
 export default function UserProfile() {
-  const { user, signOut: signOutFromStore } = useNotesStore()
+  const { user, signOut: signOutFromAuth } = useAuthStore()
+  const { clearAll } = useNotesStore()
+  const { clearGitHubData } = useGitHubStore()
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
   const handleSignOut = async () => {
     try {
       await signOut(auth)
-      signOutFromStore()
+      signOutFromAuth()
+      clearAll()
+      clearGitHubData()
       setIsOpen(false)
     } catch (error) {
       console.error('Sign out failed:', error)

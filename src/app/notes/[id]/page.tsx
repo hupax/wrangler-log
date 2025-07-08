@@ -2,19 +2,21 @@
 import { useEffect } from 'react'
 import { useParams } from 'next/navigation'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
-import { useNotesStore } from '@/lib/store'
+import { useAuthStore } from '@/stores/auth'
+import { useNotesStore } from '@/stores/notes'
 
 export default function NotePage() {
   const params = useParams()
   const noteId = params.id as string
-  const { fetchNote, currentNote, isAuthenticated, user } = useNotesStore()
+  const { isAuthenticated, user } = useAuthStore()
+  const { fetchNote, currentNote } = useNotesStore()
 
   useEffect(() => {
     const loadNote = async () => {
       if (!noteId || !isAuthenticated || !user?.uid) return
 
       try {
-        const note = await fetchNote(noteId)
+        const note = await fetchNote(noteId, user)
       } catch (error) {
         console.error('Failed to fetch note:', error)
       }
@@ -23,7 +25,7 @@ export default function NotePage() {
     if (isAuthenticated && user?.uid) {
       loadNote()
     }
-  }, [noteId, isAuthenticated, user?.uid, fetchNote])
+  }, [noteId, isAuthenticated, user, fetchNote])
 
   return (
     <div className="container mx-auto px-4">

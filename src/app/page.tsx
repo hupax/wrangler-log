@@ -8,7 +8,8 @@ import {
   SendIcon,
 } from '@/components/icons'
 import { useRouter } from 'next/navigation'
-import { useNotesStore } from '@/lib/store'
+import { useAuthStore } from '@/stores/auth'
+import { useNotesStore } from '@/stores/notes'
 import { useStreamingNote } from '@/hooks/useStreamingNote'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 
@@ -28,7 +29,8 @@ export default function Home() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const contentEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const { addNote, user, isAuthenticated, isLoading } = useNotesStore()
+  const { user, isAuthenticated, isLoading } = useAuthStore()
+  const { addNote } = useNotesStore()
 
   // 自动滚动到内容底部（只在用户没有手动滚动时）
   const [userScrolled, setUserScrolled] = useState(false)

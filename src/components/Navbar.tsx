@@ -9,7 +9,7 @@ import {
 } from './icons'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useNotesStore } from '@/lib/store'
+import { useAuthStore } from '@/stores/auth'
 import UserProfile from './auth/UserProfile'
 import LoginButton from './auth/LoginButton'
 
@@ -25,7 +25,7 @@ export default function Header({
   const [isScrolled, setIsScrolled] = useState(false)
 
   const router = useRouter()
-  const { isAuthenticated } = useNotesStore()
+  const { isAuthenticated } = useAuthStore()
 
   useEffect(() => {
     const handleScroll = () => {

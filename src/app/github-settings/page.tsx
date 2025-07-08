@@ -1,11 +1,11 @@
 'use client'
 import GitHubSettings from '@/components/GithubSettings'
-import { useNotesStore } from '@/lib/store'
+import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 
 export default function GithubSettingsPage() {
-  const { isAuthenticated, isLoading } = useNotesStore()
+  const { isAuthenticated, isLoading } = useAuthStore()
   const router = useRouter()
 
   useEffect(() => {

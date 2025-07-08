@@ -1,15 +1,7 @@
-// 创建全局状态管理
 import { create } from 'zustand'
-import { GitHubConfig } from './github'
+import { User } from './auth'
 
-interface User {
-  uid: string
-  email: string
-  displayName: string
-  photoURL: string
-}
-
-interface Note {
+export interface Note {
   id: string
   userId: string
   title: string
@@ -28,7 +20,7 @@ interface Note {
   folderId?: string | null
 }
 
-interface Folder {
+export interface Folder {
   id: string
   userId: string
   name: string
@@ -40,34 +32,19 @@ interface Folder {
 
 interface NotesStore {
   notes: Note[]
-  user: User | null
   currentNote: Note | null
-  isLoading: boolean
-  isAuthenticated: boolean
-  // 新增 GitHub 相关状态
-  githubConfig: GitHubConfig | null
-  isGitHubConnected: boolean
-
-  // Folder
   folders: Folder[]
   currentFolder: Folder | null
   expandedFolders: Set<string>
 
-  // Actions
-  setUser: (user: User | null) => void
-  signOut: () => void
+  // Notes Actions
   setNotes: (notes: Note[]) => void
   addNote: (note: Note) => void
   updateNote: (id: string, updates: Partial<Note>) => void
   deleteNote: (id: string) => void
   setCurrentNote: (note: Note | null) => void
-  setLoading: (loading: boolean) => void
-  fetchNotes: () => Promise<void>
-  fetchNote: (noteId: string) => Promise<Note | null>
-
-  // GitHub Actions
-  setGitHubConfig: (config: GitHubConfig | null) => void
-  setGitHubConnected: (connected: boolean) => void
+  fetchNotes: (user: User) => Promise<void>
+  fetchNote: (noteId: string, user: User) => Promise<Note | null>
 
   // Folder Actions
   setFolders: (folders: Folder[]) => void
@@ -77,39 +54,21 @@ interface NotesStore {
   updateFolder: (id: string, updates: Partial<Folder>) => void
   deleteFolder: (id: string) => void
   moveNoteToFolder: (noteId: string, folderId: string) => void
-  fetchFolders: () => Promise<void>
+  fetchFolders: (user: User) => Promise<void>
   toggleFolderExpanded: (folderId: string) => void
+
+  // Clear data on signout
+  clearAll: () => void
 }
 
 export const useNotesStore = create<NotesStore>((set, get) => ({
   notes: [],
-  user: null,
   currentNote: null,
-  isLoading: true,
-  isAuthenticated: false,
-
-  // GitHub Status
-  githubConfig: null,
-  isGitHubConnected: false,
-
-  // Folder
   folders: [],
   currentFolder: null,
   expandedFolders: new Set<string>(),
 
-  setUser: user => set({ user, isAuthenticated: !!user }),
-  signOut: () =>
-    set({
-      user: null,
-      isAuthenticated: false,
-      notes: [],
-      currentNote: null,
-      folders: [],
-      currentFolder: null,
-      expandedFolders: new Set<string>(),
-      githubConfig: null,
-      isGitHubConnected: false,
-    }),
+  // Notes Actions
   setNotes: notes => set({ notes }),
   addNote: note =>
     set(state => ({
@@ -126,11 +85,6 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
       notes: state.notes.filter(note => note.id !== id),
     })),
   setCurrentNote: note => set({ currentNote: note }),
-  setLoading: loading => set({ isLoading: loading }),
-
-  // GitHub Actions
-  setGitHubConfig: config => set({ githubConfig: config }),
-  setGitHubConnected: connected => set({ isGitHubConnected: connected }),
 
   // Folder Actions
   setFolders: folders => set({ folders }),
@@ -168,9 +122,8 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
     }),
   setExpandedFolders: expanded => set({ expandedFolders: expanded }),
 
-  // Folder API
-  fetchFolders: async () => {
-    const { user } = get()
+  // API Methods
+  fetchFolders: async (user: User) => {
     if (!user?.uid) return
     try {
       const response = await fetch(`/api/folders?userId=${user.uid}`)
@@ -186,22 +139,17 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
       }
     } catch (error) {
       console.error('Failed to fetch folders:', error)
-    } finally {
     }
   },
 
-  // 获取用户的所有笔记
-  fetchNotes: async () => {
-    const { user } = get()
+  fetchNotes: async (user: User) => {
     if (!user?.uid) return
 
-    set({ isLoading: true })
     try {
       const response = await fetch(`/api/notes?userId=${user.uid}`)
       const data = await response.json()
 
       if (response.ok && data.notes) {
-        // 转换日期字符串为Date对象
         const notes = data.notes.map((note: any) => ({
           ...note,
           createdAt: new Date(note.createdAt),
@@ -211,14 +159,10 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
       }
     } catch (error) {
       console.error('Failed to fetch notes:', error)
-    } finally {
-      set({ isLoading: false })
     }
   },
 
-  // 获取单个笔记
-  fetchNote: async (noteId: string) => {
-    const { user } = get()
+  fetchNote: async (noteId: string, user: User) => {
     if (!user?.uid) return null
 
     try {
@@ -239,15 +183,13 @@ export const useNotesStore = create<NotesStore>((set, get) => ({
     }
     return null
   },
+
+  clearAll: () =>
+    set({
+      notes: [],
+      currentNote: null,
+      folders: [],
+      currentFolder: null,
+      expandedFolders: new Set<string>(),
+    }),
 }))
-
-interface AuthStore {
-  user: User | null
-  isAuthenticated: boolean
-  isLoading: boolean
-
-  // Actions
-  signIn: () => Promise<void>
-  signOut: () => Promise<void>
-  setUser: (user: User | null) => void
-}

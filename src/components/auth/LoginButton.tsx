@@ -1,10 +1,10 @@
 'use client'
 import { signInWithPopup } from 'firebase/auth'
 import { auth, googleProvider } from '@/lib/firebase'
-import { useNotesStore } from '@/lib/store'
+import { useAuthStore } from '@/stores/auth'
 
 export default function LoginButton() {
-  const { setUser } = useNotesStore()
+  const { setUser } = useAuthStore()
 
   const handleSignIn = async () => {
     try {

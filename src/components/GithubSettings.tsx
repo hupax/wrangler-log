@@ -1,18 +1,19 @@
 'use client'
 
-import { useNotesStore } from '@/lib/store'
+import { useAuthStore } from '@/stores/auth'
+import { useGitHubStore } from '@/stores/github'
 import { useEffect, useState } from 'react'
 import { GitHubConfig, GitHubService } from '@/lib/github'
 import { GitHubIcon, ConnectedIcon, DisconnectedIcon } from './icons'
 
 export default function GithubSettings() {
+  const { user } = useAuthStore()
   const {
     githubConfig,
     setGitHubConfig,
     isGitHubConnected,
     setGitHubConnected,
-    user,
-  } = useNotesStore()
+  } = useGitHubStore()
 
   const [config, setConfig] = useState<GitHubConfig>({
     accessToken: githubConfig?.accessToken || '',
