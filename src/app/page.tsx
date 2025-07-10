@@ -10,194 +10,155 @@ import {
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth'
 import { useNotesStore } from '@/stores/notes'
-import { useStreamingNote } from '@/hooks/useStreamingNote'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 export default function Home() {
-  const {
-    content,
-    isGenerating,
-    error: streamError,
-    isComplete,
-    generateNote,
-    reset,
-  } = useStreamingNote()
-
+  const [input, setInput] = useState('')
+  const [content, setContent] = useState('')
+  const [isGenerating, setIsGenerating] = useState(false)
   const [error, setError] = useState('')
   const [isComposing, setIsComposing] = useState(false)
-  const [inputContent, setInputContent] = useState('')
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const contentEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const { user, isAuthenticated, isLoading } = useAuthStore()
+  const { user } = useAuthStore()
   const { addNote } = useNotesStore()
 
-  // 自动滚动到内容底部（只在用户没有手动滚动时）
-  const [userScrolled, setUserScrolled] = useState(false)
-
+  // 自动滚动到底部
   useEffect(() => {
-    if (contentEndRef.current && content && !userScrolled) {
+    if (contentEndRef.current && content) {
       contentEndRef.current.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [content, userScrolled])
+  }, [content])
 
-  // 监听用户滚动
-  useEffect(() => {
-    const handleScroll = () => {
-      // 获取主内容区域的滚动容器
-      const mainElement = document.querySelector('main')
-      if (!mainElement) return
+  // 生成笔记
+  const generateNote = async () => {
+    if (!input.trim() || !user || isGenerating) return
 
-      const scrollTop = mainElement.scrollTop
-      const scrollHeight = mainElement.scrollHeight
-      const clientHeight = mainElement.clientHeight
-
-      // 如果用户滚动到了非底部位置，标记为用户已滚动
-      if (scrollTop + clientHeight < scrollHeight - 100) {
-        setUserScrolled(true)
-      } else {
-        setUserScrolled(false)
-      }
-    }
-
-    // 监听主内容区域的滚动事件
-    const mainElement = document.querySelector('main')
-    if (mainElement) {
-      mainElement.addEventListener('scroll', handleScroll)
-      return () => mainElement.removeEventListener('scroll', handleScroll)
-    }
-  }, [isGenerating, content]) // 添加依赖，确保在内容变化时重新绑定
-
-  // 初始化时设置textarea高度
-  useEffect(() => {
-    if (textareaRef.current) {
-      const maxHeight = 365
-      textareaRef.current.style.height = 'auto'
-      const scrollHeight = textareaRef.current.scrollHeight
-
-      if (scrollHeight > maxHeight) {
-        textareaRef.current.style.height = maxHeight + 'px'
-        textareaRef.current.style.overflowY = 'auto'
-      } else {
-        textareaRef.current.style.height = scrollHeight + 'px'
-        textareaRef.current.style.overflowY = 'hidden'
-      }
-    }
-  }, [])
-
-  // 输入框内容变化
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const text = e.target.value
-    setInputContent(text)
+    setIsGenerating(true)
     setError('')
-
-    // 自动调整高度
-    if (textareaRef.current) {
-      const maxHeight = 365
-
-      textareaRef.current.style.height = 'auto'
-      const scrollHeight = textareaRef.current.scrollHeight
-
-      if (scrollHeight > maxHeight) {
-        textareaRef.current.style.height = maxHeight + 'px'
-        textareaRef.current.style.overflowY = 'auto'
-      } else {
-        textareaRef.current.style.height = scrollHeight + 'px'
-        textareaRef.current.style.overflowY = 'hidden'
-      }
-    }
-  }
-
-  // 创建笔记
-  const handleGenerateNote = async () => {
-    if (!inputContent.trim() || isGenerating || !user) return
-
-    reset()
-    await generateNote(inputContent, user.uid)
-  }
-
-  const handleSaveNote = async () => {
-    if (!content.trim() || !user || !isComplete) return
+    setContent('')
 
     try {
-      const title =
-        content
-          .split('\n')[0]
-          .replace(/^#+\s*/, '')
-          .trim() || '新建笔记'
-
       const response = await fetch('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title,
-          content,
-          userId: user.uid,
-          prompt: inputContent,
-          isStreamGenerated: true,
-        }),
+        body: JSON.stringify({ prompt: input, userId: user.uid }),
       })
 
-      const data = await response.json()
-
-      if (response.ok && data.success) {
-        addNote({
-          id: data.noteId,
-          userId: data.userId,
-          title: data.title,
-          content: data.content,
-          createdAt: data.createdAt,
-          updatedAt: data.updatedAt,
-          prompt: inputContent,
-        })
-        router.push(`/notes/${data.noteId}`)
+      if (!response.ok) {
+        throw new Error('生成失败')
       }
-    } catch (error) {
-      console.error('Failed to save note:', error)
+
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = (await reader?.read()) || { done: true }
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6))
+
+              if (data.type === 'content') {
+                setContent(prev => prev + data.content)
+              } else if (data.type === 'complete') {
+                // 添加到本地存储
+                addNote({
+                  id: data.noteId,
+                  userId: user.uid,
+                  title: data.title,
+                  content: data.content,
+                  prompt: input,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                })
+
+                // 跳转到笔记页面
+                router.push(`/notes/${data.noteId}`)
+                return
+              } else if (data.type === 'error') {
+                setError(data.error)
+                break
+              }
+            } catch (e) {
+              console.error('解析错误:', e)
+            }
+          }
+        }
+      }
+    } catch (err) {
+      setError('生成失败，请重试')
+    } finally {
+      setIsGenerating(false)
     }
   }
 
-  const handleNewNote = () => {
-    reset()
-    setInputContent('')
-    setUserScrolled(false) // 重置滚动状态
+  // 输入框变化
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInput(e.target.value)
+
+    // 自动调整高度
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      const scrollHeight = textareaRef.current.scrollHeight
+      const maxHeight = 365
+
+      if (scrollHeight > maxHeight) {
+        textareaRef.current.style.height = maxHeight + 'px'
+        textareaRef.current.style.overflowY = 'auto'
+      } else {
+        textareaRef.current.style.height = scrollHeight + 'px'
+        textareaRef.current.style.overflowY = 'hidden'
+      }
+    }
   }
 
-  // 如果正在生成或已完成，只显示笔记内容
+  // 重置
+  const handleReset = () => {
+    setInput('')
+    setContent('')
+    setError('')
+    setIsGenerating(false)
+  }
+
+  // 如果正在生成或有内容，显示生成界面
   if (isGenerating || content) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 p-8">
         <div className="max-w-2xl mx-auto">
-          {/* 顶部简单操作栏 */}
           <div className="flex justify-between items-center mb-8">
             <button
-              onClick={handleNewNote}
+              onClick={handleReset}
               className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-sm"
             >
               ← 返回
             </button>
-            {isComplete && (
-              <button
-                onClick={handleSaveNote}
-                className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
-              >
-                保存笔记
-              </button>
-            )}
+            <div className="text-gray-500 dark:text-gray-400 text-sm">
+              {isGenerating ? '正在生成中...' : '生成完成'}
+            </div>
           </div>
 
-          {/* 只显示笔记内容 */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
+            </div>
+          )}
+
           <div className="prose dark:prose-invert max-w-none">
             {content ? (
-              <div>
-                <MarkdownRenderer content={content} />
-              </div>
+              <MarkdownRenderer content={content} />
             ) : (
-              <div className="flex flex-col items-center justify-center py-12">
-                <div className="relative mb-4">
-                  <div className="w-8 h-8 border-2 border-gray-200 dark:border-gray-700 rounded-full"></div>
-                  <div className="absolute inset-0 w-8 h-8 border-2 border-gray-600 dark:border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                </div>
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-2 border-gray-600 dark:border-gray-400 border-t-transparent rounded-full animate-spin"></div>
               </div>
             )}
           </div>
@@ -215,9 +176,9 @@ export default function Home() {
           What's on your mind today?
         </h1>
 
-        {(error || streamError) && (
+        {error && (
           <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error || streamError}
+            {error}
           </div>
         )}
 
@@ -228,13 +189,13 @@ export default function Home() {
                 <div className="input-content">
                   <textarea
                     ref={textareaRef}
-                    value={inputContent}
-                    onChange={handleContentChange}
+                    value={input}
+                    onChange={handleInputChange}
                     onKeyDown={e => {
                       if (e.key === 'Enter' && !e.shiftKey && !isComposing) {
-                        if (inputContent.trim()) {
+                        if (input.trim()) {
                           e.preventDefault()
-                          handleGenerateNote()
+                          generateNote()
                         } else {
                           e.preventDefault()
                         }
@@ -280,10 +241,10 @@ export default function Home() {
                   >
                     <MicIcon className="w-5 h-5" />
                   </button>
-                  {inputContent.trim() ? (
+                  {input.trim() ? (
                     <button
-                      onClick={handleGenerateNote}
-                      disabled={isGenerating || !inputContent.trim()}
+                      onClick={generateNote}
+                      disabled={isGenerating}
                       className="flex items-center justify-center rounded-full transition-colors hover:opacity-70 disabled:text-[#f4f4f4] disabled:hover:opacity-100 dark:focus-visible:outline-white bg-black text-white disabled:bg-[#D7D7D7] dark:bg-white dark:text-black h-9 w-9"
                     >
                       <SendIcon className="icon" />

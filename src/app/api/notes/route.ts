@@ -8,8 +8,7 @@ import {
   orderBy,
   serverTimestamp,
 } from 'firebase/firestore'
-import { generateNote, generateNoteTitle } from '@/lib/ai'
-import { process } from '@/lib/utils'
+import { generateNoteStream, generateNoteTitle } from '@/lib/ai'
 
 // GET - 获取所有笔记
 export async function GET(request: NextRequest) {
@@ -44,75 +43,105 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - 创建新笔记（包括AI生成和流式生成）
+// POST - 流式生成笔记
 export async function POST(request: NextRequest) {
   try {
-    const {
-      prompt,
-      userId,
-      title,
-      content,
-      isStreamGenerated = false,
-    } = await request.json()
+    const { prompt, userId } = await request.json()
 
-    // 验证必需的参数
-    if (!userId) {
+    if (!prompt || !userId) {
       return NextResponse.json(
-        { error: 'User authentication required' },
-        { status: 401 }
+        { error: 'Prompt and userId are required' },
+        { status: 400 }
       )
     }
 
-    let finalTitle = title
-    let finalContent = content
+    // 创建流式响应
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder()
+        let fullContent = ''
 
-    // 如果是流式生成的笔记，直接使用提供的内容
-    if (isStreamGenerated) {
-      if (!title || !content) {
-        return NextResponse.json(
-          {
-            error: 'Title and content are required for stream generated notes',
-          },
-          { status: 400 }
-        )
-      }
-    } else {
-      // 传统AI生成模式
-      if (!prompt) {
-        return NextResponse.json(
-          { error: 'Prompt is required' },
-          { status: 400 }
-        )
-      }
+        try {
+          // 开始生成
+          controller.enqueue(encoder.encode('data: {"type":"start"}\n\n'))
 
-      finalContent = process(await generateNote(prompt))
-      finalTitle = await generateNoteTitle(finalContent)
-    }
+          // 获取流式响应
+          const streamResponse = await generateNoteStream(prompt)
 
-    // 使用嵌套集合结构：notes/{userId}/userNotes/{noteId}
-    const noteRef = await addDoc(collection(db, 'notes', userId, 'userNotes'), {
-      title: finalTitle.trim(),
-      prompt: prompt || '',
-      content: finalContent,
-      userId,
-      isStreamGenerated,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+          // 处理流式数据
+          for await (const chunk of streamResponse.stream) {
+            const text = chunk?.candidates?.[0]?.content?.parts?.[0]?.text
+            if (text) {
+              fullContent += text
+              controller.enqueue(
+                encoder.encode(
+                  `data: ${JSON.stringify({
+                    type: 'content',
+                    content: text,
+                  })}\n\n`
+                )
+              )
+            }
+          }
+
+          // 生成标题
+          const title = await generateNoteTitle(fullContent)
+
+          // 保存到数据库
+          const noteRef = await addDoc(
+            collection(db, 'notes', userId, 'userNotes'),
+            {
+              title,
+              prompt,
+              content: fullContent,
+              userId,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+            }
+          )
+
+          // 发送完成信号
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                type: 'complete',
+                noteId: noteRef.id,
+                title,
+                content: fullContent,
+              })}\n\n`
+            )
+          )
+
+          controller.close()
+        } catch (error) {
+          console.error('Stream error:', error)
+          controller.enqueue(
+            encoder.encode(
+              `data: ${JSON.stringify({
+                type: 'error',
+                error: 'Failed to generate note',
+              })}\n\n`
+            )
+          )
+          controller.close()
+        }
+      },
     })
 
-    return NextResponse.json({
-      success: true,
-      noteId: noteRef.id,
-      title: finalTitle.trim(),
-      content: finalContent,
-      userId,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    return new NextResponse(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
     })
   } catch (error) {
     console.error('Failed to create note:', error)
     return NextResponse.json(
-      { error: 'Failed to create note', details: error },
+      { error: 'Failed to create note' },
       { status: 500 }
     )
   }
