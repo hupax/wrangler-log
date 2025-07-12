@@ -29,25 +29,41 @@ export default function Header({
 
   useEffect(() => {
     const handleScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-      const newIsScrolled = scrollTop > 50
-      setIsScrolled(newIsScrolled)
+      // 找到实际的滚动容器 - main元素
+      const mainElement = document.querySelector('main')
+      if (mainElement) {
+        const scrollTop = mainElement.scrollTop
+        const newIsScrolled = scrollTop > 50
+        setIsScrolled(newIsScrolled)
+      }
     }
 
-    handleScroll()
-    window.addEventListener('scroll', handleScroll, { passive: true })
+    // 延迟一下确保DOM已经渲染
+    const timer = setTimeout(() => {
+      const mainElement = document.querySelector('main')
+      if (mainElement) {
+        handleScroll()
+        mainElement.addEventListener('scroll', handleScroll, { passive: true })
+      }
+    }, 100)
 
     return () => {
-      window.removeEventListener('scroll', handleScroll)
+      clearTimeout(timer)
+      const mainElement = document.querySelector('main')
+      if (mainElement) {
+        mainElement.removeEventListener('scroll', handleScroll)
+      }
     }
   }, [])
 
   return (
     <div className="flex items-center justify-between w-full px-4 py-2 sticky top-0 z-50 bg-white">
-      {/* 分割线 */}
-      {isScrolled && (
-        <div className="absolute bottom-0 left-0 w-full h-px bg-gray-200"></div>
-      )}
+      {/* 分割线 - 带渐变效果 */}
+      <div
+        className={`absolute bottom-0 left-0 w-full h-px bg-gray-200 transition-opacity duration-200 ${
+          isScrolled ? 'opacity-100' : 'opacity-0'
+        }`}
+      ></div>
 
       <div className="flex items-center pl-2">
         <button

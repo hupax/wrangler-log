@@ -154,6 +154,47 @@ body {
   background: rgba(0, 0, 0, 0.3);
 }
 
+/* 侧边栏滚动条 */
+.openai-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 6px;
+}
+
+.openai-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.openai-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(236, 236, 236);
+  border-radius: 3px;
+  border-right: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.openai-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgb(227, 227, 227);
+  background-clip: padding-box;
+}
+
+/* 主内容滚动条 */
+.main-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.main-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.main-scrollbar::-webkit-scrollbar-thumb {
+  background: rgb(236, 236, 236);
+  border-radius: 4px;
+}
+
+.main-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgb(227, 227, 227);
+}
+
 /* 平滑滚动 */
 html {
   scroll-behavior: smooth;

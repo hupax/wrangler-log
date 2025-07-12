@@ -24,7 +24,9 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   const { user, isLoading } = useAuthStore()
   const { notes, fetchNotes } = useNotesStore()
   const [activeMenuNoteId, setActiveMenuNoteId] = useState<string | null>(null)
+  const [showSeparator, setShowSeparator] = useState(false)
   const buttonRefs = useRef<{ [key: string]: HTMLButtonElement | null }>({})
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
 
   const handleLinkClick = (e: React.MouseEvent, noteHref: string) => {
     // 如果点击的是当前页面，阻止刷新
@@ -60,6 +62,23 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
     loadNotes()
   }, [fetchNotes, user, isLoading])
 
+  // 监听滚动事件
+  useEffect(() => {
+    const handleScroll = () => {
+      if (scrollContainerRef.current) {
+        const scrollTop = scrollContainerRef.current.scrollTop
+        // 当滚动超过15px时显示分隔线
+        setShowSeparator(scrollTop > 15)
+      }
+    }
+
+    const scrollContainer = scrollContainerRef.current
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll)
+      return () => scrollContainer.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
+
   const menuItems = [
     {
       icon: NewNoteIcon,
@@ -88,12 +107,20 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
   ]
 
   return (
-    <div className="h-full bg-gray-50 border-r border-gray-200 flex flex-col">
-      {/* 侧边栏顶部 - 与导航栏平行的菜单图标 */}
-      <div className="flex justify-end px-4 py-2">
+    <div
+      ref={scrollContainerRef}
+      className="h-full bg-[rgb(249,249,249)] border-r border-gray-200 flex flex-col overflow-y-auto openai-scrollbar"
+      style={{
+        borderRightWidth: '1px',
+        borderRightColor: 'rgb(237, 237, 237)',
+        boxShadow: 'none',
+      }}
+    >
+      {/* 侧边栏顶部 - 与导航栏平行的菜单图标 - 粘性定位 */}
+      <div className="sticky top-0 bg-[rgb(249,249,249)] z-10 flex justify-end px-4 py-2">
         <button
           onClick={onClose}
-          className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent transition-all duration-200 cursor-w-resize"
+          className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-[rgb(239,239,239)] hover:border-gray-100 border-2 border-transparent transition-all duration-200 cursor-w-resize"
           style={{
             transform: 'rotate(90deg)',
             willChange: 'transform',
@@ -103,14 +130,14 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
         </button>
       </div>
 
-      {/* 侧边栏内容 */}
-      <div className="px-4 pb-6 flex-1">
-        <div className="space-y-1">
+      {/* 上方区域 - 固定不滚动 - 粘性定位 */}
+      <div className="sticky top-12 bg-[rgb(249,249,249)] z-10 px-4 pb-0">
+        <div className="space-y-1 pb-4">
           {menuItems.map(item => (
             <button
               key={item.label}
               onClick={item.action}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-transparent hover:bg-gray-100 hover:border-gray-100 border-2 border-transparent text-gray-700 transition-all duration-200 cursor-pointer
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl bg-transparent hover:bg-[rgb(239,239,239)] hover:border-gray-100 border-2 border-transparent text-gray-700 transition-all duration-200 cursor-pointer
                   ${item.separator ? 'mt-6' : ''}
                   `}
             >
@@ -118,61 +145,68 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
               <span className="text-sm font-medium">{item.label}</span>
             </button>
           ))}
+        </div>
 
-          <h3 className="px-3 pt-6 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-            Notes
-          </h3>
+        {/* 分隔线 - 仅在滚动时显示 */}
+        <div
+          className={`border-t border-gray-200 -mx-4 transition-opacity duration-200 ${
+            showSeparator ? 'opacity-100' : 'opacity-0'
+          }`}
+        ></div>
+      </div>
 
-          <div className="space-y-px">
-            {notes.map(note => (
-              <Link
-                key={note.id}
-                href={`/notes/${note.id}`}
-                prefetch={true}
-                onClick={e => handleLinkClick(e, `/notes/${note.id}`)}
-                className={`group flex items-center justify-between px-3 py-1.5 rounded-xl cursor-pointer transition-colors duration-200 ${
-                  pathname === `/notes/${note.id}`
-                    ? 'bg-gray-200'
-                    : 'hover:bg-gray-100'
-                }`}
-                draggable="true"
-              >
-                <div className="flex min-w-0 grow items-center gap-2">
-                  <div className="truncate">
-                    <span
-                      className={`text-sm ${
-                        pathname === `/notes/${note.id}`
-                          ? 'text-gray-800'
-                          : 'text-gray-700'
-                      }`}
-                      dir="auto"
-                    >
-                      {note.title}
-                    </span>
-                  </div>
+      <div className="px-4 py-4">
+        <h3 className="px-3 pb-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          Notes
+        </h3>
+
+        <div className="space-y-px">
+          {notes.map(note => (
+            <Link
+              key={note.id}
+              href={`/notes/${note.id}`}
+              prefetch={true}
+              onClick={e => handleLinkClick(e, `/notes/${note.id}`)}
+              className={`group flex items-center justify-between px-3 py-1.5 rounded-xl cursor-pointer transition-colors hover:bg-[rgb(239,239,239)] duration-200 ${
+                pathname === `/notes/${note.id}` ? 'bg-[rgb(239,239,239)]' : ''
+              }`}
+              draggable="true"
+            >
+              <div className="flex min-w-0 grow items-center gap-2">
+                <div className="truncate">
+                  <span
+                    className={`text-sm ${
+                      pathname === `/notes/${note.id}`
+                        ? 'text-gray-800'
+                        : 'text-gray-700'
+                    }`}
+                    dir="auto"
+                  >
+                    {note.title}
+                  </span>
                 </div>
+              </div>
 
-                <div className="text-gray-500 flex items-center self-stretch">
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <button
-                      ref={el => {
-                        if (el) buttonRefs.current[note.id] = el
-                      }}
-                      className="w-7 h-7 flex items-center justify-center transition-all duration-150 cursor-pointer"
-                      onClick={e => handleOptionsClick(e, note.id)}
-                      aria-label="Open note options"
-                    >
-                      <MoreOptionsIcon
-                        width={20}
-                        height={20}
-                        className="w-5 h-5 text-gray-700"
-                      />
-                    </button>
-                  </div>
+              <div className="text-gray-500 flex items-center self-stretch">
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <button
+                    ref={el => {
+                      if (el) buttonRefs.current[note.id] = el
+                    }}
+                    className="w-7 h-7 flex items-center justify-center transition-all duration-150 cursor-pointer"
+                    onClick={e => handleOptionsClick(e, note.id)}
+                    aria-label="Open note options"
+                  >
+                    <MoreOptionsIcon
+                      width={20}
+                      height={20}
+                      className="w-5 h-5 text-gray-700"
+                    />
+                  </button>
                 </div>
-              </Link>
-            ))}
-          </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
 

@@ -50,7 +50,9 @@ export default function Layout({ children }: LayoutProps) {
       {/* 主内容 - 被推动 */}
       <div className="h-screen flex flex-col flex-1 overflow-hidden">
         <Navbar onToggleSidebar={toggleSidebar} isSidebarOpen={isSidebarOpen} />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto main-scrollbar">
+          {children}
+        </main>
       </div>
 
       {/* 移动端遮罩层 */}
