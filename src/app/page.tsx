@@ -32,6 +32,7 @@ export default function Home() {
     }
   }, [content])
 
+  
   // 生成笔记
   const generateNote = async () => {
     if (!input.trim() || !user || isGenerating) return
