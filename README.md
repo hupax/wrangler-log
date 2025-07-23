@@ -129,7 +129,7 @@ Firestore Collections:
     └── {userId}: {
         accessToken, repoOwner, repoName,
         defaultBranch, basePath, updatedAt
-      }
+}
 ```
 
 ### 优势
