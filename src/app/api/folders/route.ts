@@ -6,6 +6,7 @@ import {
   addDoc,
   getDocs,
   query,
+  where,
   orderBy,
   serverTimestamp,
 } from 'firebase/firestore'
@@ -23,11 +24,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // get all folders from firestore
+    // 使用扁平化结构：folders collection，通过userId过滤
     const q = query(
-      collection(db, 'folders', userId, 'userFolders'),
-      orderBy('createdAt', 'desc'),
-      orderBy('name', 'asc')
+      collection(db, 'folders'),
+      where('userId', '==', userId),
+      orderBy('createdAt', 'desc')
     )
 
     const querySnapshot = await getDocs(q)
@@ -60,9 +61,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // create new folder in firestore
+    // 使用扁平化结构：folders collection
     const newFolderRef = await addDoc(
-      collection(db, 'folders', userId, 'userFolders'),
+      collection(db, 'folders'),
       {
         name: name.trim(),
         parentId: parentId || null,

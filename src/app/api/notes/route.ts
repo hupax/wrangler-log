@@ -5,6 +5,7 @@ import {
   addDoc,
   getDocs,
   query,
+  where,
   orderBy,
   serverTimestamp,
 } from 'firebase/firestore'
@@ -21,7 +22,8 @@ export async function GET(request: NextRequest) {
     }
 
     const q = query(
-      collection(db, 'notes', userId, 'userNotes'),
+      collection(db, 'notes'),
+      where('userId', '==', userId),
       orderBy('updatedAt', 'desc')
     )
     const querySnapshot = await getDocs(q)
@@ -88,17 +90,14 @@ export async function POST(request: NextRequest) {
           const title = await generateNoteTitle(fullContent)
 
           // 保存到数据库
-          const noteRef = await addDoc(
-            collection(db, 'notes', userId, 'userNotes'),
-            {
-              title,
-              prompt,
-              content: fullContent,
-              userId,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-            }
-          )
+          const noteRef = await addDoc(collection(db, 'notes'), {
+            title,
+            prompt,
+            content: fullContent,
+            userId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          })
 
           // 发送完成信号
           controller.enqueue(

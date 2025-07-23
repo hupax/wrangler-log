@@ -36,6 +36,14 @@ export default function GithubSettings() {
     private: boolean
   } | null>(null)
 
+  // 导入相关状态
+  const [isImporting, setIsImporting] = useState(false)
+  const [importResult, setImportResult] = useState<{
+    success: boolean
+    message: string
+    results?: any
+  } | null>(null)
+
   // 加载已保存的配置
   useEffect(() => {
     if (githubConfig) {
@@ -99,9 +107,65 @@ export default function GithubSettings() {
     setGitHubConnected(false)
     setRepoInfo(null)
     setTestResult(null)
+    setImportResult(null)
 
     // TODO: 删除数据库中的配置
     await removeGithubConfigFromDatabase()
+  }
+
+  // 导入笔记功能
+  const handleImportNotes = async () => {
+    if (!user || !config.accessToken || !config.repoOwner || !config.repoName) {
+      setImportResult({
+        success: false,
+        message: '请先完成GitHub配置和用户登录',
+      })
+      return
+    }
+
+    setIsImporting(true)
+    setImportResult(null)
+
+    try {
+      console.log('开始导入笔记...')
+
+      const response = await fetch('/api/github/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: user.uid,
+          githubConfig: config,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        setImportResult({
+          success: true,
+          message: `✅ ${result.message}`,
+          results: result.results,
+        })
+        console.log('导入完成:', result)
+      } else {
+        setImportResult({
+          success: false,
+          message: `❌ 导入失败：${result.error || '未知错误'}`,
+        })
+      }
+    } catch (error) {
+      console.error('导入过程出错:', error)
+      setImportResult({
+        success: false,
+        message: `❌ 导入出错：${
+          error instanceof Error ? error.message : '未知错误'
+        }`,
+      })
+    } finally {
+      setIsImporting(false)
+    }
   }
 
   const saveGithubConfigToDatabase = async (config: GitHubConfig) => {
@@ -149,8 +213,32 @@ export default function GithubSettings() {
     }
   }
 
+  const handleTestGetAllFiles = async () => {
+    if (!config.accessToken || !config.repoOwner || !config.repoName) {
+      console.log('请先完成GitHub配置')
+      return
+    }
+
+    try {
+      const githubService = new GitHubService(config)
+      console.log('开始获取所有文件...')
+      const allFiles = await githubService.getAllContents()
+      console.log('获取完成！总共找到文件:', allFiles.length)
+      console.log('文件列表:', allFiles)
+    } catch (error) {
+      console.error('获取失败:', error)
+    }
+  }
+
+
   return (
     <div className="github-settings max-w-2xl mx-auto p-6">
+      <button
+        onClick={handleTestGetAllFiles}
+        className="mt-4 px-4 py-2 bg-blue-500 text-white rounded"
+      >
+        测试获取所有文件
+      </button>
       <div className="flex items-center gap-3 mb-6">
         <GitHubIcon width={24} height={24} />
         <h2 className="text-xl font-semibold">GitHub 集成设置</h2>
@@ -301,6 +389,53 @@ export default function GithubSettings() {
               </div>
             )}
           </div>
+
+          {/* 导入笔记功能 */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="font-medium text-blue-900 mb-2">导入笔记</h3>
+            <p className="text-sm text-blue-800 mb-3">
+              从GitHub仓库导入所有.md文件到应用中，支持文件夹结构
+            </p>
+            <button
+              onClick={handleImportNotes}
+              disabled={isImporting}
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              {isImporting ? '正在导入...' : '导入所有笔记'}
+            </button>
+          </div>
+
+          {/* 导入结果显示 */}
+          {importResult && (
+            <div
+              className={`p-4 rounded-lg ${
+                importResult.success
+                  ? 'bg-green-50 border border-green-200 text-green-800'
+                  : 'bg-red-50 border border-red-200 text-red-800'
+              }`}
+            >
+              <p className="text-sm font-medium">{importResult.message}</p>
+              {importResult.results && (
+                <div className="mt-2 text-xs">
+                  <p>✅ 成功: {importResult.results.success} 个</p>
+                  <p>⏭️ 跳过: {importResult.results.skipped} 个</p>
+                  <p>❌ 失败: {importResult.results.failed} 个</p>
+                  {importResult.results.errors?.length > 0 && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer">查看错误详情</summary>
+                      <div className="mt-1 pl-2 border-l-2 border-red-300">
+                        {importResult.results.errors.map((error: any, index: number) => (
+                          <p key={index} className="text-xs">
+                            {error.file}: {error.error}
+                          </p>
+                        ))}
+                      </div>
+                    </details>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="flex gap-3">
             <button

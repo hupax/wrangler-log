@@ -48,7 +48,7 @@
 **后端服务**
 
 - **Google Cloud Vertex AI** - 企业级 AI 文本生成
-- **Firebase Firestore** - 实时数据库
+- **Firebase Firestore** - 实时数据库（扁平化结构）
 - **Firebase Auth** - 用户认证系统
 - **GitHub API** - 版本控制和同步
 
@@ -68,6 +68,7 @@ src/
 │   │   ├── notes/         # 笔记 CRUD 接口
 │   │   ├── folders/       # 文件夹管理接口
 │   │   ├── github/        # GitHub 集成接口
+│   │   ├── users/         # 用户管理接口
 │   │   └── generative/    # AI 生成接口
 │   ├── notes/[id]/        # 动态笔记详情页
 │   ├── github-settings/   # GitHub 配置页面
@@ -90,222 +91,53 @@ src/
 │   ├── auth.ts           # 认证逻辑
 │   ├── firebase.ts       # Firebase 配置
 │   ├── github.ts         # GitHub 服务
-│   ├── store.tsx         # Zustand 状态管理
 │   └── utils.ts          # 工具函数
-├── hooks/                # 自定义 Hooks
-│   └── useAuth.ts        # 认证 Hook
+├── stores/               # Zustand 状态管理
+│   ├── auth.ts           # 认证状态
+│   ├── notes.ts          # 笔记状态
+│   ├── github.ts         # GitHub 状态
+│   └── index.ts          # 统一导出
 └── styles/               # 样式文件
     ├── globals.css
     ├── code-block.css
     └── prism.css
 ```
 
-## 🧠 核心实现
+## 🗄️ 数据库结构
 
-### 1. 增强的状态管理
+### Firestore 扁平化结构
 
-使用 Zustand 构建的类型安全状态管理，现在包含完整的 GitHub 集成和文件夹功能：
-
-```typescript
-interface NotesStore {
-  // 基础状态
-  notes: Note[]
-  user: User | null
-  currentNote: Note | null
-  isLoading: boolean
-  isAuthenticated: boolean
-
-  // GitHub 集成
-  githubConfig: GitHubConfig | null
-  isGitHubConnected: boolean
-
-  // 文件夹管理
-  folders: Folder[]
-  currentFolder: Folder | null
-  expandedFolders: Set<string>
-
-  // 增强的笔记模型
-  interface Note {
-    id: string
-    userId: string
-    title: string
-    content: string
-    createdAt: Date | string
-    updatedAt: Date | string
-
-    // GitHub 同步
-    githubPath?: string
-    githubSha?: string
-    lastSyncedAt?: Date | string
-    syncStatus?: 'synced' | 'pending' | 'conflict' | 'error' | 'not_synced'
-
-    // 文件夹关联
-    folderId?: string | null
-
-    // 其他属性
-    prompt?: string
-    tags?: string[]
-  }
-}
 ```
-
-### 2. GitHub 服务集成
-
-完整的 GitHub API 集成，支持仓库连接、内容同步和版本控制：
-
-```typescript
-export class GitHubService {
-  private config: GitHubConfig
-
-  // 连接测试
-  async testConnection(): Promise<{ success: boolean; error?: string }>
-
-  // 仓库信息
-  async getRepoInfo()
-
-  // 内容获取
-  async getContents(path: string = '')
-
-  // 文件操作
-  async createFile(path: string, content: string, message: string)
-  async updateFile(path: string, content: string, message: string, sha: string)
-  async deleteFile(path: string, message: string, sha: string)
-
-  // 批量导入
-  async importNotesFromRepo(): Promise<ImportResult>
-}
-```
-
-### 3. 文件夹树形结构
-
-支持无限层级嵌套的文件夹系统：
-
-```typescript
-interface Folder {
-  id: string
-  userId: string
-  name: string
-  parentId?: string // 父文件夹ID，支持嵌套
-  githubPath?: string // GitHub 路径映射
-  createdAt: Date | string
-  updatedAt: Date | string
-}
-
-// 递归渲染文件夹树
-const renderFolderNode = (folder: any, level: number = 0) => {
-  const isExpanded = expandedFolders.has(folder.id)
-  const folderNotes = getFolderNotes(folder.id)
-  const hasChildren = folder.children.length > 0 || folderNotes.length > 0
-
-  return (
-    <div key={folder.id} className="select-none">
-      {/* 文件夹节点 */}
-      <div
-        className="flex items-center gap-2"
-        style={{ paddingLeft: `${12 + level * 16}px` }}
-      >
-        {/* 展开/收起图标 */}
-        {/* 文件夹图标 */}
-        {/* 文件夹名称和笔记数量 */}
-        {/* 同步状态图标 */}
-      </div>
-
-      {/* 递归渲染子文件夹和笔记 */}
-      {isExpanded && (
-        <div className="ml-4">
-          {folder.children.map(child => renderFolderNode(child, level + 1))}
-          {folderNotes.map(note => renderNoteItem(note, level))}
-        </div>
-      )}
-    </div>
-  )
-}
-```
-
-### 4. 同步状态管理
-
-实时显示笔记和文件夹的同步状态：
-
-```typescript
-type SyncStatus = 'synced' | 'pending' | 'conflict' | 'error' | 'not_synced'
-
-const SyncStatusIcon = ({ status, size = 16 }) => {
-  const statusConfig = {
-    synced: { icon: '✅', color: 'text-green-500', title: '已同步到 GitHub' },
-    pending: { icon: '⏳', color: 'text-yellow-500', title: '正在同步' },
-    conflict: { icon: '⚠️', color: 'text-red-500', title: '存在冲突' },
-    error: { icon: '❌', color: 'text-red-500', title: '同步失败' },
-    not_synced: { icon: '☁️', color: 'text-gray-400', title: '未同步' },
-  }
-
-  return (
-    <span
-      className={statusConfig[status].color}
-      title={statusConfig[status].title}
-    >
-      {statusConfig[status].icon}
-    </span>
-  )
-}
-```
-
-### 5. 用户认证系统
-
-完整的 Firebase 认证集成：
-
-```typescript
-// 认证提供者
-export default function AuthProvider({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const { setUser, setLoading } = useNotesStore()
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user) {
-        setUser({
-          uid: user.uid,
-          email: user.email || '',
-          displayName: user.displayName || '',
-          photoURL: user.photoURL || '',
-        })
-      } else {
-        setUser(null)
+Firestore Collections:
+├── users/
+│   └── {userId}: {
+│       email, displayName, photoURL,
+│       createdAt, updatedAt
+│     }
+├── notes/
+│   └── {noteId}: {
+│       title, content, userId, folderId,
+│       githubPath, githubSha, syncStatus,
+│       createdAt, updatedAt, ...
+│     }
+├── folders/
+│   └── {folderId}: {
+│       name, parentId, userId, githubPath,
+│       createdAt, updatedAt, ...
+│     }
+└── github_configs/
+    └── {userId}: {
+        accessToken, repoOwner, repoName,
+        defaultBranch, basePath, updatedAt
       }
-      setLoading(false)
-    })
-
-    return () => unsubscribe()
-  }, [setUser, setLoading])
-
-  return <>{children}</>
-}
 ```
 
-## 🎨 UI/UX 设计
+### 优势
 
-### 响应式布局
-
-- **三栏布局** - 导航栏 + 侧边栏 + 主内容区
-- **文件夹树** - 左侧显示完整的文件夹结构
-- **笔记列表** - 按文件夹分组显示笔记
-- **移动端适配** - 自适应布局，侧边栏可折叠
-
-### 交互细节
-
-- **拖拽支持** - 文件夹和笔记的拖拽操作
-- **键盘快捷键** - 常用操作的快捷键支持
-- **实时搜索** - 笔记和文件夹的实时搜索
-- **批量操作** - 支持多选和批量操作
-
-### 同步状态可视化
-
-- **状态图标** - 每个笔记显示同步状态
-- **进度指示** - 同步进度的实时显示
-- **冲突解决** - 可视化的冲突解决界面
-- **历史记录** - 完整的同步历史记录
+- **查询性能更好** - 减少深度嵌套查询
+- **扩展性更强** - 支持分享、协作等功能
+- **维护更简单** - 数据关系清晰
+- **权限控制精确** - 基于文档级别的权限
 
 ## 🔧 功能模块
 
@@ -336,7 +168,7 @@ export async function generateNote(prompt: string): Promise<string> {
 ### 2. 文件夹管理
 
 ```typescript
-// 文件夹 CRUD API
+// 文件夹 CRUD API - 扁平化结构
 export async function POST(request: NextRequest) {
   const { name, parentId, userId } = await request.json()
 
@@ -355,7 +187,7 @@ export async function POST(request: NextRequest) {
 ### 3. GitHub 同步
 
 ```typescript
-// GitHub 配置保存
+// GitHub 配置保存 - 扁平化结构
 export async function POST(request: NextRequest) {
   const { config, userId } = await request.json()
 
@@ -416,6 +248,27 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your-sender-id
 NEXT_PUBLIC_FIREBASE_APP_ID=your-app-id
 ```
 
+### Firestore 配置部署
+
+```bash
+# 安装 Firebase CLI
+npm install -g firebase-tools
+
+# 登录 Firebase
+firebase login
+
+# 初始化项目（如果还没有）
+firebase init firestore
+
+# 部署索引和安全规则
+chmod +x scripts/deploy-firestore.sh
+./scripts/deploy-firestore.sh
+
+# 或者手动部署
+firebase deploy --only firestore:indexes
+firebase deploy --only firestore:rules
+```
+
 ### 启动开发服务器
 
 ```bash
@@ -427,15 +280,43 @@ npm run build
 npm start
 ```
 
+## 🔒 安全配置
+
+### Firestore 安全规则
+
+项目使用严格的安全规则确保数据安全：
+
+```javascript
+// 用户只能访问自己的数据
+match /notes/{noteId} {
+  allow read, write: if request.auth != null &&
+    resource.data.userId == request.auth.uid;
+}
+
+// 支持公共笔记（可选功能）
+match /notes/{noteId} {
+  allow read: if resource.data.isPublic == true;
+}
+```
+
+### 必需的索引
+
+系统自动创建以下复合索引以优化查询性能：
+
+- `notes`: userId + updatedAt (desc)
+- `notes`: userId + folderId + updatedAt (desc)
+- `folders`: userId + parentId
+- `folders`: userId + createdAt (desc)
+
 ## 🎯 项目亮点
 
 ### 技术创新
 
-1. **完整的 TypeScript 实现** - 从前端到后端的全链路类型安全
-2. **现代化技术栈** - Next.js 15 + React 19 + Turbopack
-3. **智能 AI 集成** - 深度集成 Google Cloud Vertex AI
-4. **实时同步架构** - Firebase + GitHub 双向同步
-5. **组件化设计** - 高度可复用的组件架构
+1. **扁平化数据结构** - 优化的 Firestore 存储架构
+2. **完整的 TypeScript 实现** - 从前端到后端的全链路类型安全
+3. **现代化技术栈** - Next.js 15 + React 19 + Turbopack
+4. **智能 AI 集成** - 深度集成 Google Cloud Vertex AI
+5. **实时同步架构** - Firebase + GitHub 双向同步
 
 ### 功能特色
 
@@ -449,7 +330,7 @@ npm start
 
 1. **模块化设计** - 清晰的代码结构和组件分离
 2. **类型安全** - 完整的 TypeScript 类型定义
-3. **性能优化** - 代码分割、懒加载和缓存策略
+3. **性能优化** - 扁平化结构 + 复合索引
 4. **可扩展性** - 易于添加新功能和集成
 5. **可维护性** - 清晰的代码结构和文档
 
@@ -457,8 +338,8 @@ npm start
 
 ### 短期目标
 
-- [ ] 完善文件夹 UI 集成
-- [ ] 实现 GitHub 批量导入
+- [ ] 完善 GitHub 同步功能实现
+- [ ] 实现笔记批量导入
 - [ ] 添加同步冲突解决
 - [ ] 优化移动端体验
 
@@ -473,13 +354,17 @@ npm start
 
 - [ ] 多云存储支持
 - [ ] AI 助手功能
-- [ ] 数据分析面板
-- [ ] 企业级功能
+- [ ] 团队工作空间
+- [ ] API 开放平台
+
+## 📄 许可证
+
+MIT License - 详见 [LICENSE](LICENSE) 文件
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
 
 ---
 
-这个项目展示了如何用现代化的技术栈构建一个功能完整、体验优秀的 AI 笔记应用。每个
-技术选型都经过深思熟虑，每行代码都追求质量和可维护性。通过 GitHub 集成和文件夹管
-理，用户可以更好地组织和同步自己的知识体系。
-
-_Built with ❤️ using Next.js 15 + TypeScript + AI_
+**注意**: 升级到扁平化结构后，建议重新部署 Firestore 配置以获得最佳性能。

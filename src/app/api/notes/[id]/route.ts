@@ -22,19 +22,26 @@ export async function GET(
       return NextResponse.json({ error: 'UserId is required' }, { status: 400 })
     }
 
-    // 使用嵌套集合路径：notes/{userId}/userNotes/{noteId}
-    const docRef = doc(db, 'notes', userId, 'userNotes', id)
+    // 使用扁平化结构：notes/{noteId}
+    const docRef = doc(db, 'notes', id)
     const docSnap = await getDoc(docRef)
 
     if (!docSnap.exists()) {
       return NextResponse.json({ error: 'Note not found' }, { status: 404 })
     }
 
+    const noteData = docSnap.data()
+
+    // 验证用户权限
+    if (noteData.userId !== userId) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
     const note = {
       id: docSnap.id,
-      ...docSnap.data(),
-      createdAt: docSnap.data()?.createdAt?.toDate(),
-      updatedAt: docSnap.data()?.updatedAt?.toDate(),
+      ...noteData,
+      createdAt: noteData?.createdAt?.toDate(),
+      updatedAt: noteData?.updatedAt?.toDate(),
     }
 
     return NextResponse.json({ note })
@@ -59,8 +66,18 @@ export async function PUT(
       return NextResponse.json({ error: 'UserId is required' }, { status: 400 })
     }
 
-    // 使用嵌套集合路径：notes/{userId}/userNotes/{noteId}
-    const docRef = doc(db, 'notes', userId, 'userNotes', id)
+    // 使用扁平化结构：notes/{noteId}
+    const docRef = doc(db, 'notes', id)
+    const docSnap = await getDoc(docRef)
+
+    if (!docSnap.exists()) {
+      return NextResponse.json({ error: 'Note not found' }, { status: 404 })
+    }
+
+    // 验证用户权限
+    if (docSnap.data()?.userId !== userId) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
 
     await updateDoc(docRef, {
       title,
@@ -92,8 +109,19 @@ export async function DELETE(
       return NextResponse.json({ error: 'UserId is required' }, { status: 400 })
     }
 
-    // 使用嵌套集合路径：notes/{userId}/userNotes/{noteId}
-    const docRef = doc(db, 'notes', userId, 'userNotes', id)
+    // 使用扁平化结构：notes/{noteId}
+    const docRef = doc(db, 'notes', id)
+    const docSnap = await getDoc(docRef)
+
+    if (!docSnap.exists()) {
+      return NextResponse.json({ error: 'Note not found' }, { status: 404 })
+    }
+
+    // 验证用户权限
+    if (docSnap.data()?.userId !== userId) {
+      return NextResponse.json({ error: 'Access denied' }, { status: 403 })
+    }
+
     await deleteDoc(docRef)
 
     return NextResponse.json({ success: true })
