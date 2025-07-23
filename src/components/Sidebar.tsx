@@ -373,7 +373,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       }}
     >
       {/* 侧边栏顶部 - 与导航栏平行的菜单图标 - 粘性定位 */}
-      <div className="sticky top-0 bg-[rgb(249,249,249)] z-10 flex justify-end px-4 py-2">
+      <div className="sticky top-0 bg-[rgb(249,249,249)] z-50 flex justify-end px-4 py-2">
         <button
           onClick={onClose}
           className="w-8 h-8 flex items-center justify-center rounded-xl bg-transparent hover:bg-[rgb(239,239,239)] hover:border-gray-100 border-2 border-transparent transition-all duration-200 cursor-w-resize"
@@ -387,7 +387,7 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
       </div>
 
       {/* 上方区域 - 固定不滚动 - 粘性定位 */}
-      <div className="sticky top-12 bg-[rgb(249,249,249)] z-10 px-4 pb-0">
+      <div className="sticky top-12 bg-[rgb(249,249,249)] z-40 px-4 pb-0">
         <div className="space-y-1 pb-4">
           {menuItems.map(item => (
             <button
