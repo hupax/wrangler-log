@@ -18,6 +18,7 @@ export interface GitHubItem {
   type: 'file' | 'dir'
   content?: string
   encoding?: string
+  relativePath?: string
   _links: {
     self: string
     git: string
@@ -25,31 +26,49 @@ export interface GitHubItem {
   }
 }
 
+export interface ConnectionResult {
+  success: boolean
+  error?: string
+}
+
+export interface FileContent {
+  content: string
+  sha: string
+  path: string
+  size: number
+}
+
 export class GitHubService {
   private config: GitHubConfig
+  private readonly baseURL = 'https://api.github.com'
 
   constructor(config: GitHubConfig) {
     this.config = config
   }
 
+  private get headers() {
+    return {
+      'Authorization': `token ${this.config.accessToken}`,
+      'Accept': 'application/vnd.github.v3+json',
+    }
+  }
+
+  private get repoURL() {
+    return `${this.baseURL}/repos/${this.config.repoOwner}/${this.config.repoName}`
+  }
+
   // 测试连接 - 验证 token 和仓库访问权限
-  async testConnection(): Promise<{ success: boolean; error?: string }> {
+  async testConnection(): Promise<ConnectionResult> {
     try {
-      const response = await fetch(
-        `https://api.github.com/repos/${this.config.repoOwner}/${this.config.repoName}`,
-        {
-          headers: {
-            'Authorization': `token ${this.config.accessToken}`,
-            'Accept': 'application/vnd.github.v3+json',
-          },
-        }
-      )
+      const response = await fetch(this.repoURL, {
+        headers: this.headers,
+      })
 
       if (!response.ok) {
-        const error = await response.json()
+        const error = await response.json().catch(() => ({ message: 'Connection failed' }))
         return {
           success: false,
-          error: error.message || 'Failed to connect to GitHub',
+          error: error.message || `HTTP ${response.status}: ${response.statusText}`,
         }
       }
 
@@ -57,25 +76,19 @@ export class GitHubService {
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : 'Network error',
       }
     }
   }
 
   // 获取仓库基本信息
   async getRepoInfo() {
-    const response = await fetch(
-      `https://api.github.com/repos/${this.config.repoOwner}/${this.config.repoName}`,
-      {
-        headers: {
-          'Authorization': `token ${this.config.accessToken}`,
-          'Accept': 'application/vnd.github.v3+json',
-        },
-      }
-    )
+    const response = await fetch(this.repoURL, {
+      headers: this.headers,
+    })
 
     if (!response.ok) {
-      throw new Error('Failed to fetch repository information')
+      throw new Error(`Failed to fetch repository: ${response.statusText}`)
     }
 
     return await response.json()
@@ -83,98 +96,69 @@ export class GitHubService {
 
   // 获取指定路径内容
   async getContents(path: string = ''): Promise<GitHubItem[]> {
-    const fullPath = path
-      ? `${this.config.basePath}/${path}`
-      : this.config.basePath
+    const fullPath = path ? `${this.config.basePath}/${path}` : this.config.basePath
+    const url = `${this.repoURL}/contents/${fullPath}`
 
-    const response = await fetch(
-      `https://api.github.com/repos/${this.config.repoOwner}/${this.config.repoName}/contents/${fullPath}`,
-      {
-        headers: {
-          'Authorization': `token ${this.config.accessToken}`,
-          'Accept': 'application/vnd.github.v3+json',
-        },
-      }
-    )
+    const response = await fetch(url, {
+      headers: this.headers,
+    })
 
     if (!response.ok) {
       if (response.status === 404) {
         return []
-      } else {
-        throw new Error('Failed to fetch file contents')
       }
+      throw new Error(`Failed to fetch contents: ${response.statusText}`)
     }
 
     const data = await response.json()
-    // 确保返回数组格式
     return Array.isArray(data) ? data : [data]
   }
 
-  // 递归获取所有内容
-  async getAllContents(path: string = ''): Promise<GitHubItem[]> {
-    console.log(`正在获取路径: ${path || '根目录'}`)
-
+  // 递归获取所有 markdown 文件
+  async getAllMarkdownFiles(path: string = ''): Promise<GitHubItem[]> {
     const contents = await this.getContents(path)
-    const allItems: GitHubItem[] = []
-
-    console.log(`发现 ${contents.length} 个项目:`, contents.map(item => `${item.name} (${item.type})`))
+    const markdownFiles: GitHubItem[] = []
 
     for (const item of contents) {
-      if (item.type === 'file') {
-        // 只收集 .md 文件
-        if (item.name.endsWith('.md')) {
-          console.log(`✓ 找到笔记文件: ${item.path}`)
-          allItems.push({
-            ...item,
-            // 添加相对路径信息
-            relativePath: path ? `${path}/${item.name}` : item.name
-          } as GitHubItem & { relativePath: string })
-        } else {
-          console.log(`- 跳过非markdown文件: ${item.name}`)
-        }
+      if (item.type === 'file' && item.name.endsWith('.md')) {
+        markdownFiles.push({
+          ...item,
+          relativePath: path ? `${path}/${item.name}` : item.name
+        })
       } else if (item.type === 'dir') {
-        console.log(`📁 进入文件夹: ${item.name}`)
-        // 递归获取文件夹内容
-        const subItems = await this.getAllContents(
+        const subFiles = await this.getAllMarkdownFiles(
           path ? `${path}/${item.name}` : item.name
         )
-        allItems.push(...subItems)
-        console.log(`📁 ${item.name} 文件夹处理完成，找到 ${subItems.length} 个文件`)
+        markdownFiles.push(...subFiles)
       }
     }
 
-    console.log(`路径 ${path || '根目录'} 总共找到 ${allItems.length} 个笔记文件`)
-    return allItems
+    return markdownFiles
   }
 
   // 获取单个文件内容
-  async getFileContent(path: string) {
-    console.log(`正在获取文件内容: ${path}`)
-
+  async getFileContent(path: string): Promise<FileContent | null> {
     const fullPath = `${this.config.basePath}/${path}`
+    const url = `${this.repoURL}/contents/${fullPath}`
 
-    const response = await fetch(
-      `https://api.github.com/repos/${this.config.repoOwner}/${this.config.repoName}/contents/${fullPath}`,
-      {
-        headers: {
-          'Authorization': `token ${this.config.accessToken}`,
-          'Accept': 'application/vnd.github.v3+json',
-        },
-      }
-    )
+    const response = await fetch(url, {
+      headers: this.headers,
+    })
 
     if (!response.ok) {
       if (response.status === 404) {
-        console.log(`文件不存在: ${path}`)
         return null
       }
       throw new Error(`Failed to fetch file: ${response.statusText}`)
     }
 
     const data = await response.json()
-    const content = decodeURIComponent(escape(atob(data.content)))
 
-    console.log(`✓ 成功获取文件内容: ${path} (${content.length} 字符)`)
+    if (!data.content) {
+      throw new Error('File content not available')
+    }
+
+    const content = decodeURIComponent(escape(atob(data.content)))
 
     return {
       content,

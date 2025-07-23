@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
 
     // 1. 获取所有.md文件
     console.log('步骤1: 获取所有文件...')
-    const allFiles = await githubService.getAllContents()
+    const allFiles = await githubService.getAllMarkdownFiles()
     console.log(`发现 ${allFiles.length} 个笔记文件`)
 
     if (allFiles.length === 0) {
