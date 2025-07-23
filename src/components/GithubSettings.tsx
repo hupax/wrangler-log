@@ -17,11 +17,21 @@ function ConnectionStatus({ isConnected, repoInfo, config }: any) {
       </div>
       {repoInfo && (
         <div className="text-sm text-green-800 space-y-1">
-          <p><strong>仓库：</strong> {repoInfo.full_name}</p>
-          <p><strong>描述：</strong> {repoInfo.description || '无描述'}</p>
-          <p><strong>默认分支：</strong> {repoInfo.default_branch}</p>
-          <p><strong>私有仓库：</strong> {repoInfo.private ? '是' : '否'}</p>
-          <p><strong>笔记目录：</strong> {config.basePath}</p>
+          <p>
+            <strong>仓库：</strong> {repoInfo.full_name}
+          </p>
+          <p>
+            <strong>描述：</strong> {repoInfo.description || '无描述'}
+          </p>
+          <p>
+            <strong>默认分支：</strong> {repoInfo.default_branch}
+          </p>
+          <p>
+            <strong>私有仓库：</strong> {repoInfo.private ? '是' : '否'}
+          </p>
+          <p>
+            <strong>笔记目录：</strong> {config.basePath}
+          </p>
         </div>
       )}
     </div>
@@ -53,7 +63,8 @@ function ConnectionForm({ config, setConfig, onConnect, isLoading }: any) {
           placeholder="ghp_xxxxxxxxxxxx"
         />
         <p className="text-sm text-gray-500 mt-1">
-          在 GitHub Settings → Developer settings → Personal access tokens 中创建
+          在 GitHub Settings → Developer settings → Personal access tokens
+          中创建
         </p>
       </div>
 
@@ -87,7 +98,9 @@ function ConnectionForm({ config, setConfig, onConnect, isLoading }: any) {
             type="text"
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             value={config.defaultBranch}
-            onChange={e => setConfig({ ...config, defaultBranch: e.target.value })}
+            onChange={e =>
+              setConfig({ ...config, defaultBranch: e.target.value })
+            }
             placeholder="main"
           />
         </div>
@@ -149,11 +162,13 @@ function ImportPanel({ isImporting, onImport, importResult }: any) {
                 <details className="mt-2">
                   <summary className="cursor-pointer">查看错误详情</summary>
                   <div className="mt-1 pl-2 border-l-2 border-red-300">
-                    {importResult.results.errors.map((error: any, index: number) => (
-                      <p key={index} className="text-xs">
-                        {error.file}: {error.error}
-                      </p>
-                    ))}
+                    {importResult.results.errors.map(
+                      (error: any, index: number) => (
+                        <p key={index} className="text-xs">
+                          {error.file}: {error.error}
+                        </p>
+                      )
+                    )}
                   </div>
                 </details>
               )}

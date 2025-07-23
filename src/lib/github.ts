@@ -1,42 +1,9 @@
-export interface GitHubConfig {
-  accessToken: string
-  repoOwner: string
-  repoName: string
-  defaultBranch: string
-  basePath: string // 笔记在仓库中的基础路径
-}
-
-export interface GitHubItem {
-  name: string
-  path: string
-  sha: string
-  size: number
-  url: string
-  html_url: string
-  git_url: string
-  download_url: string | null
-  type: 'file' | 'dir'
-  content?: string
-  encoding?: string
-  relativePath?: string
-  _links: {
-    self: string
-    git: string
-    html: string
-  }
-}
-
-export interface ConnectionResult {
-  success: boolean
-  error?: string
-}
-
-export interface FileContent {
-  content: string
-  sha: string
-  path: string
-  size: number
-}
+import {
+  GitHubConfig,
+  GitHubItem,
+  ConnectionResult,
+  FileContent,
+} from '@/stores/github'
 
 export class GitHubService {
   private config: GitHubConfig
@@ -65,10 +32,13 @@ export class GitHubService {
       })
 
       if (!response.ok) {
-        const error = await response.json().catch(() => ({ message: 'Connection failed' }))
+        const error = await response
+          .json()
+          .catch(() => ({ message: 'Connection failed' }))
         return {
           success: false,
-          error: error.message || `HTTP ${response.status}: ${response.statusText}`,
+          error:
+            error.message || `HTTP ${response.status}: ${response.statusText}`,
         }
       }
 
@@ -96,7 +66,9 @@ export class GitHubService {
 
   // 获取指定路径内容
   async getContents(path: string = ''): Promise<GitHubItem[]> {
-    const fullPath = path ? `${this.config.basePath}/${path}` : this.config.basePath
+    const fullPath = path
+      ? `${this.config.basePath}/${path}`
+      : this.config.basePath
     const url = `${this.repoURL}/contents/${fullPath}`
 
     const response = await fetch(url, {
@@ -123,7 +95,7 @@ export class GitHubService {
       if (item.type === 'file' && item.name.endsWith('.md')) {
         markdownFiles.push({
           ...item,
-          relativePath: path ? `${path}/${item.name}` : item.name
+          relativePath: path ? `${path}/${item.name}` : item.name,
         })
       } else if (item.type === 'dir') {
         const subFiles = await this.getAllMarkdownFiles(

@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GitHubService } from '@/lib/github'
 import { db } from '@/lib/firebase'
-import { collection, addDoc, query, where, getDocs, serverTimestamp } from 'firebase/firestore'
+import {
+  collection,
+  addDoc,
+  query,
+  where,
+  getDocs,
+  serverTimestamp,
+} from 'firebase/firestore'
 
 // 查找现有笔记
 async function findNoteByGithubPath(githubPath: string, userId: string) {
@@ -11,7 +18,9 @@ async function findNoteByGithubPath(githubPath: string, userId: string) {
     where('githubPath', '==', githubPath)
   )
   const snapshot = await getDocs(q)
-  return snapshot.empty ? null : { id: snapshot.docs[0].id, ...snapshot.docs[0].data() }
+  return snapshot.empty
+    ? null
+    : { id: snapshot.docs[0].id, ...snapshot.docs[0].data() }
 }
 
 // 查找现有文件夹
@@ -22,12 +31,14 @@ async function findFolderByPath(githubPath: string, userId: string) {
     where('githubPath', '==', githubPath)
   )
   const snapshot = await getDocs(q)
-  return snapshot.empty ? null : { id: snapshot.docs[0].id, ...snapshot.docs[0].data() }
+  return snapshot.empty
+    ? null
+    : { id: snapshot.docs[0].id, ...snapshot.docs[0].data() }
 }
 
 // 创建文件夹层级结构
 async function createFolderStructure(files: any[], userId: string) {
-  console.log('开始创建文件夹结构...')
+  console.log('Starting folder structure creation...')
 
   const folderMap = new Map<string, string>() // path -> folderId
   const folderPaths = new Set<string>()
@@ -45,7 +56,7 @@ async function createFolderStructure(files: any[], userId: string) {
     }
   })
 
-  console.log('需要创建的文件夹:', Array.from(folderPaths))
+  console.log('Folders to create:', Array.from(folderPaths))
 
   // 2. 按层级排序，确保父文件夹先创建
   const sortedPaths = Array.from(folderPaths).sort((a, b) => {
@@ -59,13 +70,15 @@ async function createFolderStructure(files: any[], userId: string) {
     const parentPath = pathParts.slice(0, -1).join('/')
     const parentId = parentPath ? folderMap.get(parentPath) : null
 
-    console.log(`处理文件夹: ${folderPath} (父级: ${parentPath || '根目录'})`)
+    console.log(
+      `Processing folder: ${folderPath} (parent: ${parentPath || 'root'})`
+    )
 
     // 检查文件夹是否已存在
     const existingFolder = await findFolderByPath(folderPath, userId)
 
     if (existingFolder) {
-      console.log(`✓ 文件夹已存在: ${folderPath}`)
+      console.log(`✓ Folder already exists: ${folderPath}`)
       folderMap.set(folderPath, existingFolder.id)
     } else {
       // 创建新文件夹
@@ -78,37 +91,45 @@ async function createFolderStructure(files: any[], userId: string) {
         updatedAt: serverTimestamp(),
       })
 
-      console.log(`✓ 创建新文件夹: ${folderPath} (ID: ${folderRef.id})`)
+      console.log(`✓ Created new folder: ${folderPath} (ID: ${folderRef.id})`)
       folderMap.set(folderPath, folderRef.id)
     }
   }
 
-  console.log('文件夹结构创建完成，映射关系:', Object.fromEntries(folderMap))
+  console.log(
+    'Folder structure creation completed, mapping:',
+    Object.fromEntries(folderMap)
+  )
   return folderMap
 }
 
 // 批量导入笔记
-async function importNotes(files: any[], folderMap: Map<string, string>, userId: string, githubService: GitHubService) {
-  console.log(`开始导入 ${files.length} 个笔记文件...`)
+async function importNotes(
+  files: any[],
+  folderMap: Map<string, string>,
+  userId: string,
+  githubService: GitHubService
+) {
+  console.log(`Starting import of ${files.length} note files...`)
 
   const results = {
     success: 0,
     failed: 0,
     skipped: 0,
-    errors: [] as any[]
+    errors: [] as any[],
   }
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i]
 
     try {
-      console.log(`[${i + 1}/${files.length}] 处理文件: ${file.path}`)
+      console.log(`[${i + 1}/${files.length}] Processing file: ${file.path}`)
 
       // 检查笔记是否已存在
       const existingNote = await findNoteByGithubPath(file.path, userId)
 
       if (existingNote) {
-        console.log(`- 笔记已存在，跳过: ${file.path}`)
+        console.log(`- Note already exists, skipping: ${file.path}`)
         results.skipped++
         continue
       }
@@ -117,7 +138,7 @@ async function importNotes(files: any[], folderMap: Map<string, string>, userId:
       const fileContent = await githubService.getFileContent(file.path)
 
       if (!fileContent) {
-        console.log(`- 无法获取文件内容: ${file.path}`)
+        console.log(`- Unable to get file content: ${file.path}`)
         results.failed++
         continue
       }
@@ -126,7 +147,9 @@ async function importNotes(files: any[], folderMap: Map<string, string>, userId:
       const filePath = file.path.split('/').slice(0, -1).join('/')
       const folderId = filePath ? folderMap.get(filePath) : null
 
-      console.log(`- 文件路径: ${filePath || '根目录'}, 文件夹ID: ${folderId || '无'}`)
+      console.log(
+        `- File path: ${filePath || 'root'}, folder ID: ${folderId || 'none'}`
+      )
 
       // 创建笔记
       const noteRef = await addDoc(collection(db, 'notes'), {
@@ -142,20 +165,19 @@ async function importNotes(files: any[], folderMap: Map<string, string>, userId:
         updatedAt: serverTimestamp(),
       })
 
-      console.log(`✓ 成功创建笔记: ${file.name} (ID: ${noteRef.id})`)
+      console.log(`✓ Successfully created note: ${file.name} (ID: ${noteRef.id})`)
       results.success++
-
     } catch (error) {
-      console.error(`✗ 导入失败: ${file.path}`, error)
+      console.error(`✗ Import failed: ${file.path}`, error)
       results.failed++
       results.errors.push({
         file: file.path,
-        error: error instanceof Error ? error.message : '未知错误'
+        error: error instanceof Error ? error.message : 'Unknown error',
       })
     }
   }
 
-  console.log('导入完成！结果:', results)
+  console.log('Import completed! Results:', results)
   return results
 }
 
@@ -164,45 +186,59 @@ export async function POST(request: NextRequest) {
     const { userId, githubConfig } = await request.json()
 
     if (!userId || !githubConfig) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
     }
 
-    console.log('开始GitHub导入流程...', { userId, repoOwner: githubConfig.repoOwner, repoName: githubConfig.repoName })
+    console.log('Starting GitHub import process...', {
+      userId,
+      repoOwner: githubConfig.repoOwner,
+      repoName: githubConfig.repoName,
+    })
 
     const githubService = new GitHubService(githubConfig)
 
     // 1. 获取所有.md文件
-    console.log('步骤1: 获取所有文件...')
+    console.log('Step 1: Getting all files...')
     const allFiles = await githubService.getAllMarkdownFiles()
-    console.log(`发现 ${allFiles.length} 个笔记文件`)
+    console.log(`Found ${allFiles.length} note files`)
 
     if (allFiles.length === 0) {
       return NextResponse.json({
         success: true,
-        message: '没有找到任何.md文件',
-        results: { success: 0, failed: 0, skipped: 0, errors: [] }
+        message: 'No .md files found',
+        results: { success: 0, failed: 0, skipped: 0, errors: [] },
       })
     }
 
     // 2. 创建文件夹结构
-    console.log('步骤2: 创建文件夹结构...')
+    console.log('Step 2: Creating folder structure...')
     const folderMap = await createFolderStructure(allFiles, userId)
 
     // 3. 批量导入笔记
-    console.log('步骤3: 导入笔记...')
-    const importResults = await importNotes(allFiles, folderMap, userId, githubService)
+    console.log('Step 3: Importing notes...')
+    const importResults = await importNotes(
+      allFiles,
+      folderMap,
+      userId,
+      githubService
+    )
 
     return NextResponse.json({
       success: true,
-      message: '导入完成',
+      message: 'Import completed',
       results: importResults,
-      totalFiles: allFiles.length
+      totalFiles: allFiles.length,
     })
-
   } catch (error) {
-    console.error('导入过程出错:', error)
-    return NextResponse.json({
-      error: error instanceof Error ? error.message : '导入失败'
-    }, { status: 500 })
+    console.error('Error during import process:', error)
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : 'Import failed',
+      },
+      { status: 500 }
+    )
   }
 }
