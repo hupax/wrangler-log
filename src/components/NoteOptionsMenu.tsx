@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { useNotesStore } from '@/stores/notes'
 import { useAuthStore } from '@/stores/auth'
+import { useScrollLock } from '@/hooks/useScrollLock'
 import {
   ShareIcon,
   RenameIcon,
@@ -33,17 +34,8 @@ function DeleteConfirmDialog({
 }) {
   const dialogRef = useRef<HTMLDivElement>(null)
 
-  // 管理页面滚动
-  useEffect(() => {
-    if (isOpen) {
-      // 阻止页面滚动
-      document.body.style.overflow = 'hidden'
-    }
-
-    return () => {
-      document.body.style.overflow = 'unset'
-    }
-  }, [isOpen])
+  // 使用滚动锁定hook
+  useScrollLock({ isLocked: isOpen })
 
   // ESC键关闭对话框
   useEffect(() => {
