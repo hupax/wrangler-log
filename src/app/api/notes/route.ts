@@ -4,6 +4,10 @@ import {
   collection,
   addDoc,
   getDocs,
+  doc,
+  updateDoc,
+  deleteDoc,
+  getDoc,
   query,
   where,
   orderBy,
@@ -141,6 +145,116 @@ export async function POST(request: NextRequest) {
     console.error('Failed to create note:', error)
     return NextResponse.json(
       { error: 'Failed to create note' },
+      { status: 500 }
+    )
+  }
+}
+
+// PUT - 更新笔记
+export async function PUT(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const noteId = searchParams.get('noteId')
+    const userId = searchParams.get('userId')
+
+    if (!noteId || !userId) {
+      return NextResponse.json(
+        { error: 'NoteId and userId are required' },
+        { status: 400 }
+      )
+    }
+
+    const { title, content, folderId } = await request.json()
+
+    if (!title && !content && folderId === undefined) {
+      return NextResponse.json(
+        { error: 'At least one field (title, content, folderId) is required' },
+        { status: 400 }
+      )
+    }
+
+    // 检查笔记是否存在且属于该用户
+    const noteRef = doc(db, 'notes', noteId)
+    const noteSnap = await getDoc(noteRef)
+
+    if (!noteSnap.exists()) {
+      return NextResponse.json({ error: 'Note not found' }, { status: 404 })
+    }
+
+    const noteData = noteSnap.data()
+    if (noteData.userId !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
+    // 构建更新数据
+    const updateData: any = {
+      updatedAt: serverTimestamp(),
+    }
+
+    if (title !== undefined) updateData.title = title
+    if (content !== undefined) updateData.content = content
+    if (folderId !== undefined) updateData.folderId = folderId
+
+    // 更新笔记
+    await updateDoc(noteRef, updateData)
+
+    // 返回更新后的数据
+    const updatedNoteSnap = await getDoc(noteRef)
+    const updatedNote = {
+      id: updatedNoteSnap.id,
+      ...updatedNoteSnap.data(),
+      createdAt: updatedNoteSnap.data()?.createdAt?.toDate(),
+      updatedAt: updatedNoteSnap.data()?.updatedAt?.toDate(),
+    }
+
+    return NextResponse.json({ note: updatedNote })
+  } catch (error) {
+    console.error('Failed to update note:', error)
+    return NextResponse.json(
+      { error: 'Failed to update note' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE - 删除笔记
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const noteId = searchParams.get('noteId')
+    const userId = searchParams.get('userId')
+
+    if (!noteId || !userId) {
+      return NextResponse.json(
+        { error: 'NoteId and userId are required' },
+        { status: 400 }
+      )
+    }
+
+    // 检查笔记是否存在且属于该用户
+    const noteRef = doc(db, 'notes', noteId)
+    const noteSnap = await getDoc(noteRef)
+
+    if (!noteSnap.exists()) {
+      return NextResponse.json({ error: 'Note not found' }, { status: 404 })
+    }
+
+    const noteData = noteSnap.data()
+    if (noteData.userId !== userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+    }
+
+    // 删除笔记
+    await deleteDoc(noteRef)
+
+    return NextResponse.json({
+      success: true,
+      message: 'Note deleted successfully'
+    })
+  } catch (error) {
+    console.error('Failed to delete note:', error)
+    return NextResponse.json(
+      { error: 'Failed to delete note' },
       { status: 500 }
     )
   }

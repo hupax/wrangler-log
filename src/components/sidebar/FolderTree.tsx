@@ -21,6 +21,7 @@ interface FolderTreeProps {
   buttonRefs: React.MutableRefObject<{
     [key: string]: HTMLButtonElement | null
   }>
+  currentNoteId?: string
 }
 
 export default function FolderTree({
@@ -30,6 +31,7 @@ export default function FolderTree({
   onToggleFolderExpanded,
   onOptionsClick,
   buttonRefs,
+  currentNoteId,
 }: FolderTreeProps) {
   const pathname = usePathname() || '/notes/1'
 

@@ -10,12 +10,14 @@ interface NoteListProps {
   buttonRefs: React.MutableRefObject<{
     [key: string]: HTMLButtonElement | null
   }>
+  currentNoteId?: string
 }
 
 export default function NoteList({
   notes,
   onOptionsClick,
   buttonRefs,
+  currentNoteId,
 }: NoteListProps) {
   const pathname = usePathname() || '/notes/1'
 

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
+import { useParams } from 'next/navigation'
 import { useFolderState, useFolderTree, useNotesByFolder, useSidebarData } from '@/hooks/useSidebar'
 import SidebarHeader from './sidebar/SidebarHeader'
 import FolderTree from './sidebar/FolderTree'
@@ -11,6 +12,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
+  const params = useParams()
+  const currentNoteId = params.id as string | undefined
   const { notes, folders } = useSidebarData()
   const { expandedFolders, toggleFolderExpanded } = useFolderState()
   const { folderTree } = useFolderTree()
@@ -29,6 +32,36 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const handleMenuClose = () => {
     setActiveMenuNoteId(null)
   }
+
+  // 自动滚动到当前笔记
+  useEffect(() => {
+    if (currentNoteId && buttonRefs.current[currentNoteId] && scrollContainerRef.current) {
+      const currentNoteElement = buttonRefs.current[currentNoteId]
+      const scrollContainer = scrollContainerRef.current
+
+      // 获取元素相对于滚动容器的位置
+      const containerRect = scrollContainer.getBoundingClientRect()
+      const elementRect = currentNoteElement.getBoundingClientRect()
+
+      // 计算是否需要滚动
+      const isElementVisible = (
+        elementRect.top >= containerRect.top &&
+        elementRect.bottom <= containerRect.bottom
+      )
+
+      if (!isElementVisible) {
+        // 计算滚动位置，让当前笔记显示在容器中央
+        const scrollTop = scrollContainer.scrollTop
+        const relativeTop = elementRect.top - containerRect.top
+        const targetScrollTop = scrollTop + relativeTop - (containerRect.height / 2) + (elementRect.height / 2)
+
+        scrollContainer.scrollTo({
+          top: Math.max(0, targetScrollTop),
+          behavior: 'smooth'
+        })
+      }
+    }
+  }, [currentNoteId, notes.length]) // 依赖笔记加载完成
 
   // 监听滚动事件
   useEffect(() => {
@@ -76,6 +109,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             onToggleFolderExpanded={toggleFolderExpanded}
             onOptionsClick={handleOptionsClick}
             buttonRefs={buttonRefs}
+            currentNoteId={currentNoteId}
           />
 
           {/* 渲染根目录笔记 */}
@@ -83,6 +117,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             notes={notes}
             onOptionsClick={handleOptionsClick}
             buttonRefs={buttonRefs}
+            currentNoteId={currentNoteId}
           />
         </div>
       </div>
