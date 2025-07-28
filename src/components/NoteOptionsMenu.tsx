@@ -135,6 +135,7 @@ export default function NoteOptionsMenu({
   const currentNoteId = params.id as string | undefined
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isArchiving, setIsArchiving] = useState(false)
 
   // 计算菜单位置
   useEffect(() => {
@@ -189,10 +190,49 @@ export default function NoteOptionsMenu({
     onClose()
   }
 
-  const handleArchive = () => {
-    console.log('Archive note:', noteTitle)
-    // TODO: 实现归档功能
-    onClose()
+  const handleArchive = async () => {
+    if (!user?.uid) {
+      console.error('User not authenticated')
+      return
+    }
+
+    setIsArchiving(true)
+
+    try {
+      const response = await fetch('/api/github/push', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          noteId,
+          userId: user.uid,
+        }),
+      })
+
+      const result = await response.json()
+
+      if (response.ok && result.success) {
+        console.log('✅ Note archived to GitHub:', result.githubUrl)
+        // 可以添加成功通知
+        alert(
+          `✅ Note "${noteTitle}" successfully archived to GitHub!\n\nView at: ${result.githubUrl}`
+        )
+      } else {
+        console.error('❌ Failed to archive note:', result.error)
+        alert(`❌ Failed to archive note: ${result.error}`)
+      }
+    } catch (error) {
+      console.error('❌ Archive error:', error)
+      alert(
+        `❌ Archive error: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`
+      )
+    } finally {
+      setIsArchiving(false)
+      onClose()
+    }
   }
 
   const handleDeleteClick = () => {
@@ -305,14 +345,22 @@ export default function NoteOptionsMenu({
               <div className="px-1">
                 <div
                   role="menuitem"
-                  className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors"
-                  onClick={handleArchive}
+                  className={`flex items-center gap-1.5 px-2 py-1.5 rounded-xl cursor-pointer transition-colors ${
+                    isArchiving
+                      ? 'bg-blue-50 dark:bg-blue-900/20 cursor-wait'
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-600'
+                  }`}
+                  onClick={isArchiving ? undefined : handleArchive}
                 >
                   <div className="flex items-center justify-center w-5 h-5 text-gray-700 dark:text-gray-300">
-                    <ArchiveIcon className="w-5 h-5" />
+                    {isArchiving ? (
+                      <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <ArchiveIcon className="w-5 h-5" />
+                    )}
                   </div>
                   <span className="text-sm text-gray-700 dark:text-gray-300">
-                    Archive
+                    {isArchiving ? 'Archiving...' : 'Archive'}
                   </span>
                 </div>
               </div>

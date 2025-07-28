@@ -10,7 +10,6 @@ import {
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/stores/auth'
 import { useNotesStore } from '@/stores/notes'
-import { useScrollDebugger } from '@/hooks/useScrollLock'
 import MarkdownRenderer from '@/components/MarkdownRenderer'
 
 export default function Home() {
@@ -25,9 +24,6 @@ export default function Home() {
   const router = useRouter()
   const { user } = useAuthStore()
   const { addNote } = useNotesStore()
-
-  // 开发环境下的滚动状态调试
-  useScrollDebugger()
 
   // 只在正在生成时自动滚动到底部，生成完成后不自动滚动
   useEffect(() => {

@@ -84,7 +84,9 @@ interface GitHubStore {
 
   // 连接操作
   setConnecting: (connecting: boolean) => void
-  setConnectionResult: (result: (ConnectionResult & { message: string }) | null) => void
+  setConnectionResult: (
+    result: (ConnectionResult & { message: string }) | null
+  ) => void
   setRepoInfo: (repoInfo: RepoInfo | null) => void
   testConnection: (config: GitHubConfig, userId: string) => Promise<void>
   disconnect: (userId: string) => Promise<void>
@@ -133,7 +135,7 @@ export const useGitHubStore = create<GitHubStore>((set, get) => ({
         connectionResult: {
           success: false,
           message: 'Please fill in all required fields',
-        }
+        },
       })
       return
     }
@@ -155,7 +157,7 @@ export const useGitHubStore = create<GitHubStore>((set, get) => ({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             userId,
-            config: { ...config, accessToken: '[HIDDEN]' },
+            config, // 保存真实的config，包含真实的accessToken
           }),
         })
 
@@ -184,7 +186,9 @@ export const useGitHubStore = create<GitHubStore>((set, get) => ({
       set({
         connectionResult: {
           success: false,
-          message: `❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          message: `❌ Error: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
         },
       })
     } finally {
@@ -230,7 +234,7 @@ export const useGitHubStore = create<GitHubStore>((set, get) => ({
         importResult: {
           success: false,
           message: 'Please configure GitHub connection first',
-        }
+        },
       })
       return
     }
@@ -269,7 +273,9 @@ export const useGitHubStore = create<GitHubStore>((set, get) => ({
       set({
         importResult: {
           success: false,
-          message: `❌ Import error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          message: `❌ Import error: ${
+            error instanceof Error ? error.message : 'Unknown error'
+          }`,
         },
       })
     } finally {
